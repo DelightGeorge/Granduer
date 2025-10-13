@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import Layout from "../shared/Layout";
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
+import Layout from "../shared/Layout";
+
+
+
 
 const Men = () => {
-  const { productData, HandleGetProducts } = useContext(ProductContext);
+  const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
   const [menProducts, setMenProducts] = useState([]);
 
   // Fetch products from context
@@ -28,7 +31,7 @@ const Men = () => {
      <div>
       <div className="w-full px-6 md:px-16 py-10 bg-gray-50">
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8 text-center">
-          Men’s Collection 👔
+          Men’s Collection 
         </h2>
 
         {/* Product Grid */}
@@ -83,12 +86,8 @@ const Men = () => {
                     ${item.price}
                   </p>
                   <button
-                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-blue-600 transition"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(`${item.name} added to cart 🛒`);
-                    }}
-                  >
+                    onClick={() => HandleAddTCart(item, 1, item?.size, item?.color)}
+                    className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-blue-600 transition">
                     Add to Cart
                   </button>
                 </div>

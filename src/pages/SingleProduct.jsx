@@ -3,10 +3,9 @@ import { ProductContext } from "../Context/ProductContext";
 import { useParams } from "react-router-dom";
 import Layout from "../shared/Layout";
 
-
 const SingleProduct = () => {
   const { id } = useParams();
-  const { productData, HandleGetProducts, } =
+  const { productData, HandleGetProducts, HandleAddTCart } =
     useContext(ProductContext);
 
   const [product, setProduct] = useState(null);
@@ -149,7 +148,10 @@ const SingleProduct = () => {
 
               {/* Add to Cart */}
               <button
-                onClick={() => console.log("Adding Cart")}
+                onClick={(e) =>
+                  e.preventDefault() ||
+                  HandleAddTCart(product, quantity, selectedSize, selectedColor)
+                }
                 className="mt-4 w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-all"
               >
                 Add to Cart
