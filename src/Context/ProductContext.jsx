@@ -3,6 +3,13 @@ const ProductContext = createContext();
 
 const ProductProvider = ({ children }) => {
   const [productData, setProductData] = useState(null);
+
+const [isAuthentified, setisAuthentified] = useState(false);
+
+
+  const [cartItems, setCartItems] = useState(
+    JSON.parse(localStorage.getItem("cartItems")) || []
+  );
   const HandleGetProducts = async () => {
     try {
       const res = await fetch("http://localhost:8000/products", {

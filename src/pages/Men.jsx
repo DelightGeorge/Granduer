@@ -35,7 +35,7 @@ const Men = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {menProducts.map((item) => (
             <Link
-              to={`/product/${item.id}`} // ✅ fixed template literal
+              to={`/product/${item.id}`}
               key={item.id}
               className="bg-white rounded-2xl shadow hover:shadow-lg transition duration-300 overflow-hidden group block"
             >
@@ -85,7 +85,7 @@ const Men = () => {
                   <button
                     className="bg-black text-white text-sm px-3 py-2 rounded-full hover:bg-blue-600 transition"
                     onClick={(e) => {
-                      e.preventDefault(); // prevent navigation
+                      e.preventDefault();
                       alert(`${item.name} added to cart 🛒`);
                     }}
                   >

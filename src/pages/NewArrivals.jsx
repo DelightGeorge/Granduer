@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-
 import { FaStar } from "react-icons/fa";
 import Layout from "../shared/Layout";
+import { Link } from "react-router-dom";
 
 const NewArrivals = () => {
   const { productData, HandleGetProducts } = useContext(ProductContext);
@@ -18,7 +18,7 @@ const NewArrivals = () => {
     setNewArrivals(filtered);
   }, [productData, HandleGetProducts]);
 
-  // Loading state (optional)
+  // Loading state
   if (!productData) {
     return (
       <Layout>
@@ -42,11 +42,14 @@ const NewArrivals = () => {
               key={product.id}
               className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all overflow-hidden"
             >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-64 object-cover"
-              />
+              <Link to={`/product/${product.id}`}>
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-64 object-cover"
+                />
+              </Link>
+
               <div className="p-4">
                 <h3 className="font-semibold text-lg text-gray-900">
                   {product.name}
@@ -67,6 +70,12 @@ const NewArrivals = () => {
             </div>
           ))}
         </div>
+
+        {newArrivals.length === 0 && (
+          <p className="text-center text-gray-500 mt-10">
+            No new arrivals available at the moment.
+          </p>
+        )}
       </div>
     </Layout>
   );
