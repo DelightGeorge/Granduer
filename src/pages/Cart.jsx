@@ -1,16 +1,64 @@
-import React, { useContext } from "react";
-import Layout from "../shared/Layout";
+import React, { useContext, useEffect, useState } from "react";
+
 import { ProductContext } from "../Context/ProductContext";
-import { LiaEdit } from "react-icons/lia";
-import { MdDelete } from "react-icons/md";
+
+import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
+import { Link } from "react-router-dom";
+
+
+import { ImCancelCircle } from "react-icons/im";
+import Layout from "../shared/Layout";
+import Edit from "../Context/Edit";
+
+
 
 const Cart = () => {
   const { cartItems, cartcout } = useContext(ProductContext);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [product, setProd] = useState(null);
+  const [selectedSize, setSetectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  // useEffect(() => {
+  //   console.log("cartItemss:", cartItems);
+  // }, [cartItems]);
 
+  useEffect(() => {
+    if (selectedSize) {
+      setProd((prv) => ({ ...prv, size: selectedSize }));
+    }
+    if (selectedColor) {
+      setProd((prv) => ({ ...prv, color: selectedColor }));
+    }
+    if (quantity) {
+      setProd((prv) => ({ ...prv, quantity: quantity }));
+    }
+  }, [selectedColor, selectedSize, quantity]);
   return (
     <Layout>
-      <div className="min-h-screen bg-white py-10 px-4 md:px-10">
+      <div className="min-h-screen bg-white py-10 px-4 md:px-10 relative  flexCol">
         <h1 className="text-3xl font-bold text-center mb-8">Your Cart</h1>
+
+        <div
+          className={` ${
+            isModalOpen ? "" : "hidden"
+          } modal min-h-screen bg-transPrimary w-full absolute top-0 left-0 h-full `}
+        >
+          <span
+            onClick={() => setIsModalOpen(false)}
+            className="absolute top-12 right-10 z-20 flexRow  rounded-full  bg-white text-primary border-[1px] border-primary hover:border-primary hover:bg-primary text-lg font-semibold hover:text-white transition ease-in-out duration-500 cursor-pointer"
+          >
+            <ImCancelCircle className="h-8 w-8" />
+          </span>
+
+          <Edit
+            product={product}
+            setSetectedSize={setSetectedSize}
+            setSelectedColor={setSelectedColor}
+            setQuantity={setQuantity}
+            quantity={quantity}
+          />
+        </div>
 
         {cartItems && cartItems.length > 0 ? (
           <div className="overflow-x-auto">
@@ -33,24 +81,36 @@ const Cart = () => {
                   >
                     <td className="py-3 px-4 flex items-center gap-3">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={item?.image}
+                        alt={item?.name}
                         className="w-12 h-12 object-cover rounded-md"
                       />
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-medium">{item?.name}</span>
                     </td>
-                    <td className="py-3 px-4">${item.price}</td>
-                    <td className="py-3 px-4">{item.quantity}</td>
+                    <td className="py-3 px-4">${item?.price}</td>
+                    <td className="py-3 px-4">{item?.quantity}</td>
                     <td className="py-3 px-4 font-semibold">
-                      ${item.price * item.quantity}
+                      ${item?.price * item?.quantity}
                     </td>
-                    <td className="py-3 px-4 text-center flex justify-center items-center gap-2">
-                      <button className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600">
-                        <LiaEdit />
-                      </button>
-                      <button className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600">
-                        <MdDelete />
-                      </button>
+                    <td className="text-center flex justify-between gap-2">
+                      <span
+                        onClick={() => {
+                          console.log("item:", item);
+
+                          setIsModalOpen(true);
+                          setProd(item);
+                        }}
+                        title="Edit"
+                        className="bg-black text-white px-2 py-1 rounded-md hover:bg-gray-800 cursor-pointer"
+                      >
+                        <RiEditCircleFill />
+                      </span>
+                      <span
+                        title="Delete"
+                        className="bg-black text-white px-2 py-1 rounded-md hover:bg-gray-800 cursor-pointer"
+                      >
+                        <RiDeleteBin3Fill />
+                      </span>
                     </td>
                   </tr>
                 ))}

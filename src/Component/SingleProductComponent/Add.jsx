@@ -1,7 +1,4 @@
-import { useContext } from "react";
-import { ProductContext } from "./ProductContext";
-
-const Edit = ({
+const Add = ({
   product,
   setSelectedSize,
   selectedSize,
@@ -11,11 +8,11 @@ const Edit = ({
   currentCartQuantity,
   setQuantity,
   quantity,
+  handleAddToCart,
 }) => {
-    const {HandleUpdateCart} = useContext(ProductContext);
   return (
     <div className="min-h-screen bg-white">
-        <h2 className="flex justify-center items-center ">Edit cart</h2>
+        <h2 className="flex justify-center items-center ">Add to cart</h2>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Image */}
@@ -42,7 +39,7 @@ const Edit = ({
             <div className="mb-4">
               <p className="text-xl font-semibold text-green-700">
                 ${product?.price}{" "}
-                {product?.discount > 0 && (
+                {product.discount > 0 && (
                   <span className="text-sm text-red-500 ml-2">
                     ({product?.discount}% off)
                   </span>
@@ -58,7 +55,7 @@ const Edit = ({
               <div className="mb-4">
                 <h2 className="font-semibold mb-1">Select Size:</h2>
                 <div className="flex gap-2">
-                  {product.sizes.map((size) => (
+                  {product?.sizes.map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
@@ -77,11 +74,11 @@ const Edit = ({
             )}
 
             {/* Colors */}
-            {product?.colors && product?.colors?.length > 0 && (
+            {product.colors && product.colors.length > 0 && (
               <div className="mb-4">
                 <h2 className="font-semibold mb-1">Select Color:</h2>
                 <div className="flex gap-3">
-                  {product?.colors.map((color) => (
+                  {product.colors.map((color) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
@@ -146,10 +143,10 @@ const Edit = ({
 
             {!isInCart ? (
               <button
-                onClick={()=>HandleUpdateCart(product)}
+                onClick={handleAddToCart}
                 className="mt-4 w-full py-3 rounded-md transition-all font-medium bg-black hover:bg-gray-800 text-white"
               >
-                Update cart
+                Add to Cart
               </button>
             ) : (
               <div className="mt-4 space-y-3">
@@ -158,7 +155,7 @@ const Edit = ({
                   className="w-full py-3 rounded-md font-medium bg-green-100 text-green-700 border-2 border-green-300 cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <span className="text-lg">✓</span>
-                  Updated  Cart
+                  Added to Cart
                 </button>
               </div>
             )}
@@ -181,9 +178,9 @@ const Edit = ({
             {/* Rating and Best Seller */}
             <div className="flex items-center gap-4 mt-6">
               <p className="text-yellow-500 font-semibold">
-                ⭐ {product?.rating} / 5
+                ⭐ {product.rating} / 5
               </p>
-              {product?.bestSeller && (
+              {product.bestSeller && (
                 <span className="bg-orange-500 text-white text-sm px-2 py-1 rounded-md">
                   {product?.bestSeller && <span>Best Seller</span>}
                 </span>
@@ -196,4 +193,4 @@ const Edit = ({
   );
 };
 
-export default Edit;
+export default Add;

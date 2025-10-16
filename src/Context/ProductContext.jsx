@@ -24,7 +24,8 @@ const ProductProvider = ({ children }) => {
 
   const HandleAddTCart = (prod, quantity = 1, size = null, color = null) => {
     if (!isAuthentified) {
-      const storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+      const storedCartItems =
+        JSON.parse(localStorage.getItem("cartItems")) || [];
 
       const existingItem = storedCartItems.find(
         (item) => parseInt(item.id) === parseInt(prod.id)
@@ -65,19 +66,40 @@ const ProductProvider = ({ children }) => {
     }
   };
 
-
-  const HandleUpdateCart = async() => {
+  const HandleUpdateCart = async (prod) => {
     try {
       if (!isAuthentified) {
+        const storedCartItems = JSON.parse(localStorage.getItem("cartItems"));
 
-      }else {
+        const existingProduct = storedCartItems.find(
+          (item) => parseInt(item?.id) === parseInt(prod?.id)
+        );
+
+        if (!existingProduct) {
+          toast.error("Product not found in cart");
+        }
+
+        const updatedCartItems = storedCartItems.map((item) =>
+          parseInt(item?.id) === parseInt(prod?.id)
+            ? {
+                ...item,
+                size: prod?.size ?? item?.size,
+                quantity: prod?.quantity ?? item?.quantity,
+                color: prod?.color ?? item?.color,
+              }
+            : item
+        );
+
+        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+        setCartItems(updatedCartItems);
+        toast.success("Cart updated successfully");
+      } else {
         console.log("Authentified");
-        
       }
-    }catch (error) {
-      console.log(error.message);
+    } catch (error) {
+      console.log(error?.message);
     }
-  }
+  };
 
   return (
     <ProductContext.Provider
@@ -88,7 +110,7 @@ const ProductProvider = ({ children }) => {
         cartItems,
         cartcout,
         setisAuthentified,
-        HandleUpdateCart
+        HandleUpdateCart,
       }}
     >
       {children}
