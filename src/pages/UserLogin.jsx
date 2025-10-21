@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
 
-
-
 import Layout from "../Shared/Layout";
 import Input from "../shared/Input";
-
 
 const UserLoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -132,12 +129,12 @@ const UserLoginPage = () => {
                   Login
                 </button>
               </form>
-                <span
-                    onClick={() => setIsReset(true)}
-                    className="hover:underline cursor-pointer font-medium flex justify-center items-center mt-3"
-                  >
-                    Forgot Password?
-                  </span>
+              <span
+                onClick={() => setIsReset(true)}
+                className="hover:underline cursor-pointer font-medium flex justify-center items-center mt-3"
+              >
+                Forgot Password?
+              </span>
             </div>
           )}
 
@@ -204,7 +201,10 @@ const UserLoginPage = () => {
               <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
                 Reset Password
               </h2>
-              <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+              <form
+                onSubmit={handleResetPassword}
+                className="flex flex-col gap-4"
+              >
                 <Input
                   type="email"
                   labelFor="Email"
