@@ -1,4 +1,4 @@
-const Input = ({ type, value, labelFor, placehold, name, onChange, className }) => {
+const Input = ({ type, value, labelFor, placehold, name, onChange }) => {
   return (
     <div className="flexCol gap-3 w-full">
       <p className="text-black w-full font-semibold flex justify-start items-start">
