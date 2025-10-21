@@ -27,7 +27,8 @@ import { Link, NavLink } from "react-router-dom";
 import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout";
+
 
 
 const Home = () => {
@@ -159,10 +160,10 @@ const Home = () => {
 
                           <div className="flex justify-between items-center gap-4">
                             <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                              <FaHeart className="h-6 w-6" />
+                              <FaHeart className="h-6 w-6 cursor-pointer" />
                             </span>
                             <span onClick={(()=> HandleAddTCart(few, 1, few?.defaultSize, few?.defaultColor))} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
-                              <FaShoppingCart className="h-6 w-6" />
+                              <FaShoppingCart className="h-6 w-6 cursor-pointer" />
                             </span>
                           </div>
                         </div>

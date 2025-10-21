@@ -7,6 +7,7 @@ import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
   const { cartcout } = useContext(ProductContext);
+
   const navlinks = [
     { id: 1, name: "About", path: "/about" },
     { id: 2, name: "Contact", path: "/contact" },
@@ -17,19 +18,22 @@ const Navbar = () => {
   ];
 
   const [isMenuOpen, setIsmenuOpen] = useState(false);
-  const HandlMenuOpen = () => setIsmenuOpen((prv) => !prv);
-
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const HandlMenuOpen = () => {
+    setIsmenuOpen((prv) => !prv);
+  };
 
   return (
     <div className="sticky top-0 left-0 z-40">
       {/* LargeScreenNav */}
       <div className="hidden lg:block">
-        <div className="w-full bg-primary px-6 lg:px-16 py-6 flex items-center justify-between text-white">
+        <div className="w-full bg-primary px-6 lg:px-16 py-6 flex items-center justify-between text-white relative">
           <Link to={"/"} className="logo font-bold font-serif italic text-2xl">
             Granduer
           </Link>
 
+          {/* Nav Links */}
           <div className="hidden lg:block">
             <div className="links flex justify-between items-center gap-4">
               {navlinks.map((item) => (
@@ -48,37 +52,57 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block">
-            <div className="cartSearch flex justify-center items-center gap-4 text-sm">
-              <span className="border-[1px] border-white bg-black p-[7px] text-sm hover:bg-white hover:text-black transition ease-in-out duration-300 rounded-3xl cursor-pointer">
-                <FiSearch />
+          {/* Right Section (Search + User + Cart) */}
+          <div className="flex items-center gap-4 text-sm relative">
+            {/* Search icon */}
+            <span
+              onClick={() => setSearchOpen((prev) => !prev)}
+              className="border-[1px] border-white bg-black p-[7px] text-sm hover:bg-white hover:text-black transition ease-in-out duration-300 rounded-3xl cursor-pointer"
+            >
+              <FiSearch />
+            </span>
+
+            {/* Search input (toggles on click) */}
+            {searchOpen && (
+              <div className="absolute right-[120px] top-1/2 -translate-y-1/2">
+                <div className="flex items-center bg-white border border-gray-300 rounded-3xl overflow-hidden w-64">
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="flex-grow px-4 py-2 text-black text-sm outline-none"
+                  />
+                  <button className="px-3 text-black">
+                    <FiSearch />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Login */}
+            <NavLink
+              to="/login"
+              className="border-[1px] border-white bg-black p-[7px] text-sm hover:bg-white hover:text-black transition ease-in-out duration-300 rounded-3xl cursor-pointer"
+            >
+              <FaUser />
+            </NavLink>
+
+            {/* Cart */}
+            <NavLink
+              className={({ isActive }) =>
+                isActive
+                  ? "border-[1px] bg-white text-black rounded-3xl p-[10px] cart text-sm relative"
+                  : "border-[1px] z-10 border-white bg-black p-[7px] text-sm hover:bg-white cart hover:text-black transition ease-in-out duration-300 rounded-3xl relative"
+              }
+              to={"/cart"}
+            >
+              <FaShoppingCart />
+              <span className="absolute border-[1px] border-white count -top-2 -right-3 h-5 w-5 p-2 rounded-full bg-white text-primary flex justify-center items-center font-bold">
+                {(cartcout && cartcout) || 0}
               </span>
-
-              {/* ✅ Added link to user login page */}
-              <Link
-                to="/userlogin"
-                className="border-[1px] border-white bg-black p-[7px] text-sm hover:bg-white hover:text-black transition ease-in-out duration-300 rounded-3xl cursor-pointer"
-              >
-                <FaUser />
-              </Link>
-
-              <NavLink
-                className={({ isActive }) =>
-                  isActive
-                    ? "border-[1px] bg-white text-black rounded-3xl p-[10px] cart text-sm relative"
-                    : "border-[1px] z-10 border-white bg-black p-[7px] text-sm hover:bg-white cart hover:text-black transition ease-in-out duration-300 rounded-3xl relative"
-                }
-                to={"/cart"}
-              >
-                <FaShoppingCart />
-                <span className="absolute border-[1px] border-white count -top-2 -right-3 h-5 w-5 p-2 rounded-full bg-white text-primary flex justify-center items-center font-bold">
-                  {(cartcout && cartcout) || 0}
-                </span>
-              </NavLink>
-            </div>
+            </NavLink>
           </div>
 
-          {/* Menu */}
+          {/* Menu Icon */}
           <span className="flex justify-center items-center p-4 lg:hidden h-16 w-16 rounded-md text-white text-3xl font-bold">
             <CiMenuFries />
           </span>
@@ -125,11 +149,10 @@ const Navbar = () => {
             Granduer
           </Link>
 
-          {/* Menu */}
+          {/* Menu and user */}
           <div className="flex justify-center items-center gap-4">
-            {/* ✅ Also linked this user icon to /userlogin */}
             <Link
-              to={"/userlogin"}
+              to={"/login"}
               className="flex justify-center items-center p-4 lg:hidden h-16 w-16 rounded-md text-white text-3xl font-bold"
             >
               <FaUser />

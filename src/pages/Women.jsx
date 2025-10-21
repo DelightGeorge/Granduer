@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 
 import { FaStar } from "react-icons/fa";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../shared/Layout";
+import Layout from "../Shared/Layout";
+
 
 const Women = () => {
   const { productData, HandleGetProducts, HandleAddTCart } =
