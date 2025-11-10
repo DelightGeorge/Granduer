@@ -15,6 +15,7 @@ import ProductProvider from "./Context/ProductContext.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
 
 import UserLoginPage from "./pages/UserLogin.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
 
 const router = createBrowserRouter([
   {
@@ -60,6 +61,10 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <UserLoginPage />,
+      },
+      {
+        path: "/dashboard",
+        element: <Dashboard />,
       },
     ],
   },
