@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { FaTachometerAlt, FaBox, FaUsers, FaShoppingCart, FaSignOutAlt } from "react-icons/fa";
+import Layout from "../Shared/Layout";
 
 const Dashboard = () => {
   return (
+    <div>
+      <Layout>
     <div className="min-h-screen flex bg-gray-100">
       
       {/* Sidebar */}
@@ -54,6 +57,8 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+    </div>
+    </Layout>
     </div>
   );
 };
