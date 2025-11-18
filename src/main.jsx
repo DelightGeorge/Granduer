@@ -15,7 +15,10 @@ import ProductProvider from "./Context/ProductContext.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
 
 import UserLoginPage from "./pages/UserLogin.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
+
+import UserDash from "./Dashboard_Pages/UserDashboard.jsx";
+import AllProducts from "./pages/AllProducts.jsx";
+import Dashboard from "./Dashboard_Pages/Dashboard.jsx";
 
 const router = createBrowserRouter([
   {
@@ -66,6 +69,15 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: <Dashboard />,
       },
+      {
+        path: "/userdashboard",
+        element: <UserDash />,
+      },
+            {
+        path: "/all-products",
+        element: <AllProducts />,
+      },
+
     ],
   },
 ]);
