@@ -24,11 +24,10 @@ import {
 } from "react-share";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, NavLink } from "react-router-dom";
-import { FaArrowCircleRight, FaArrowRight, FaHeart,  FaShoppingCart } from "react-icons/fa";
+import { FaArrowCircleRight, FaArrowRight, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout";
-
 
 
 const Home = () => {
@@ -44,11 +43,8 @@ const Home = () => {
 
   useEffect(() => {
     if (productData && productData.length > 0) {
-      const less = productData.slice(0, 3);
-      setFew(less);
-
+      setFew(productData.slice(0, 3));
       const found = productData.filter((item) => item.bestSeller === true);
-
       setBestSeller(found.length > 0 ? found : productData);
     }
   }, [productData]);
@@ -112,7 +108,7 @@ const Home = () => {
                   <Link to={`/product/${product.id}`} className="w-full h-full">
                     <img
                       src={product.image}
-                      alt="Fashion"
+                      alt={product.name}
                       className="object-cover w-full h-full"
                     />
                   </Link>
@@ -127,112 +123,67 @@ const Home = () => {
             Best Seller
           </p>
           <p className="text-center text-primary w-full mt-2 text-lg">
-            Stay cozy and stylish with our exclusive collection of best-selling
-            Hoodies
+            Stay cozy and stylish with our exclusive collection of best-selling Hoodies
           </p>
 
           <div className="px-4 md:px-10 lg:px-20 grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-x-8 md:gap-y-16 gap-16 justify-center items-stretch lg:mt-6 mt-8">
-            {fewDisplay ? (
-              <>
-                {few &&
-                  few.map((few) => (
-                    <div
-                      key={few.id}
-                      className="hover:shadow-2xl transition ease-in-out duration-500 rounded-md overflow-hidden"
-                    >
-                      <div className="w-full h-[26rem] overflow-hidden">
-                        <Link to={`/product/${few.id}`} className="w-full h-full">
-                          <img
-                            src={few.image}
-                            alt="Fashion"
-                            className="object-cover w-full h-full"
-                          />
-                        </Link>
-                      </div>
-                      <div className="p-2">
-                        <p className="text-black font-bold mt-2">{few.name}</p>
-                        <p className="text-black mt-2 z-50">{few.description}</p>
+            {(fewDisplay ? few : bestSeller)?.map((item) => (
+              <div
+                key={item.id}
+                className="hover:shadow-2xl transition ease-in-out duration-500 rounded-md overflow-hidden"
+              >
+                <div className="w-full h-[26rem] overflow-hidden">
+                  <Link to={`/product/${item.id}`} className="w-full h-full">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="object-cover w-full h-full"
+                    />
+                  </Link>
+                </div>
+                <div className="p-2">
+                  <p className="text-black font-bold mt-2">{item.name}</p>
+                  <div className="w-full">
+                    <LinesEllipsis
+                      text={item.description}
+                      maxLine="1"
+                      ellipsis="..."
+                      trimRight
+                    />
+                  </div>
 
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="p-2 bg-primary text-white rounded-md">
-                            ${few.price}
-                          </span>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="p-2 bg-primary text-white rounded-md">
+                      ${item.price}
+                    </span>
 
-                          <div className="flex justify-between items-center gap-4">
-                            <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                              <FaHeart className="h-6 w-6 cursor-pointer" />
-                            </span>
-                            <span onClick={(()=> HandleAddTCart(few, 1, few?.defaultSize, few?.defaultColor))} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
-                              <FaShoppingCart className="h-6 w-6 cursor-pointer" />
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex justify-between items-center gap-4">
+                      <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
+                        <FaHeart className="h-6 w-6" />
+                      </span>
+                      <span
+                        onClick={() =>
+                          HandleAddTCart(item, 1, item?.defaultSize, item?.defaultColor)
+                        }
+                        className="rounded-full p-2 text-white bg-primary flex justify-center items-center"
+                      >
+                        <FaShoppingCart className="h-6 w-6" />
+                      </span>
                     </div>
-                  ))}
-              </>
-            ) : (
-              <>
-                {bestSeller &&
-                  bestSeller.map((best) => (
-                    <div
-                      key={best.id}
-                      className="hover:shadow-2xl transition ease-in-out duration-500 rounded-md overflow-hidden"
-                    >
-                      <div className="w-full h-[26rem] overflow-hidden">
-                        <Link to={`/product/${best.id}`} className="w-full h-full">
-                          <img
-                            src={best.image}
-                            alt="Fashion"
-                            className="object-cover w-full h-full"
-                          />
-                        </Link>
-                      </div>
-                      <div className="p-2">
-                        <p className="text-black font-bold mt-2">{best.name}</p>
-                        <p className="text-black mt-2 z-50">
-                          {best.description}
-                        </p>
-
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="p-2 bg-primary text-white rounded-md">
-                            ${best.price}
-                          </span>
-
-                          <div className="flex justify-between items-center gap-4">
-                            <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                              <FaHeart  className="h-6 w-6" />
-                            </span>
-                            <span onClick={()=> HandleAddTCart(best, 1, best?.defaultSize, best?.defaultColor)} className="rounded-full p-2 text-white bg-primary flex justify-center items-center">
-                              <FaShoppingCart className="h-6 w-6" />
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </>
-            )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="flex justify-center mt-8">
-            {fewDisplay ? (
-              <span
-                onClick={() => setFewDisplay(false)}
-                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
-              >
-                See More
-                <p><FaArrowRight /></p>
-              </span>
-            ) : (
-              <span
-                onClick={() => setFewDisplay(true)}
-                className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
-              >
-                See Less
-                <p><FaArrowRight /></p>
-              </span>
-            )}
+            <span
+              onClick={() => setFewDisplay(!fewDisplay)}
+              className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
+            >
+              {fewDisplay ? "See More" : "See Less"}
+              <FaArrowRight />
+            </span>
           </div>
         </div>
       </div>

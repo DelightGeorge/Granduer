@@ -1,60 +1,100 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout";
 import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
 import { ImCancelCircle } from "react-icons/im";
-import Edit from "../Context/Edit";
-
 
 const Cart = () => {
-  const { cartItems, cartcout, HandleDeleteCart } = useContext(ProductContext);
+  const { cart, cartCount, HandleDeleteCart, HandleUpdateCart } = useContext(ProductContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [product, setProd] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState(null);
 
-  // Update selected fields dynamically
-  useEffect(() => {
-    if (selectedSize) setProd((prev) => ({ ...prev, size: selectedSize }));
-    if (selectedColor) setProd((prev) => ({ ...prev, color: selectedColor }));
-    if (quantity) setProd((prev) => ({ ...prev, quantity }));
-  }, [selectedColor, selectedSize, quantity]);
+  // Open modal and set selected product
+  const handleEditClick = (item) => {
+    setProduct({ ...item }); // clone to avoid direct state mutation
+    setIsModalOpen(true);
+  };
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white py-10 px-4 md:px-10 relative flex flex-col">
+      <div className="min-h-screen bg-white py-10 px-4 md:px-10 flex flex-col">
         <h1 className="text-4xl font-bold text-center mb-10 tracking-wide">
           Your Cart
         </h1>
 
-        {/* Modal */}
-        <div
-          className={`fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 transition-all duration-300 ${
-            isModalOpen ? "opacity-100 visible" : "opacity-0 invisible"
-          }`}
-        >
-          <div className="relative w-[92%] max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[88vh] overflow-y-auto">
-            <span
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-primary bg-white rounded-full shadow-md border border-gray-300 hover:bg-black hover:text-white transition p-2 cursor-pointer"
-            >
-              <ImCancelCircle className="h-5 w-5" />
-            </span>
-            <Edit
-              product={product}
-              setSelectedSize={setSelectedSize}
-              selectedSize={selectedSize}
-              selectedColor={selectedColor}
-              setSelectedColor={setSelectedColor}
-              setQuantity={setQuantity}
-              quantity={quantity}
-              closeModal={() => setIsModalOpen(false)}
-            />
-          </div>
-        </div>
+        {/* Edit Modal */}
+        {isModalOpen && product && (
+          <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+            <div className="relative w-[92%] max-w-3xl bg-white rounded-2xl shadow-2xl p-6">
+              <span
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-black"
+              >
+                <ImCancelCircle className="h-5 w-5" />
+              </span>
 
-        {cartItems && cartItems.length > 0 ? (
+              <h2 className="text-xl font-bold mb-4">{product.name}</h2>
+
+              {/* Quantity */}
+              <div className="mb-4">
+                <label className="block mb-1">Quantity</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={product.quantity}
+                  onChange={(e) =>
+                    setProduct({ ...product, quantity: parseInt(e.target.value) })
+                  }
+                  className="border px-3 py-2 rounded w-full"
+                />
+              </div>
+
+              {/* Size */}
+              <div className="mb-4">
+                <label className="block mb-1">Size</label>
+                <input
+                  type="text"
+                  value={product.size || ""}
+                  onChange={(e) =>
+                    setProduct({ ...product, size: e.target.value })
+                  }
+                  className="border px-3 py-2 rounded w-full"
+                />
+              </div>
+
+              {/* Color */}
+              <div className="mb-4">
+                <label className="block mb-1">Color</label>
+                <input
+                  type="text"
+                  value={product.color || ""}
+                  onChange={(e) =>
+                    setProduct({ ...product, color: e.target.value })
+                  }
+                  className="border px-3 py-2 rounded w-full"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  HandleUpdateCart(
+                    product.id,
+                    product.quantity,
+                    product.size,
+                    product.color
+                  );
+                  setIsModalOpen(false);
+                }}
+                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cart Items */}
+        {cart && cart.length > 0 ? (
           <>
             {/* Desktop Table */}
             <div className="hidden md:block overflow-hidden border border-gray-200 rounded-2xl shadow-md">
@@ -65,13 +105,11 @@ const Cart = () => {
                     <th className="py-4 px-6 font-semibold">Price</th>
                     <th className="py-4 px-6 font-semibold">Quantity</th>
                     <th className="py-4 px-6 font-semibold">Total</th>
-                    <th className="py-4 px-6 text-center font-semibold">
-                      Action
-                    </th>
+                    <th className="py-4 px-6 text-center font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cartItems.map((item, index) => (
+                  {cart.map((item, index) => (
                     <tr
                       key={index}
                       className="border-t hover:bg-gray-50 transition duration-300"
@@ -82,36 +120,25 @@ const Cart = () => {
                           alt={item?.name}
                           className="w-14 h-14 object-cover rounded-lg shadow-sm"
                         />
-                        <span className="font-medium text-gray-800">
-                          {item?.name}
-                        </span>
+                        <span className="font-medium text-gray-800">{item?.name}</span>
                       </td>
-                      <td className="py-4 px-6 text-gray-700">
-                        ${item?.price}
-                      </td>
-                      <td className="py-4 px-6 text-gray-700">
-                        {item?.quantity}
-                      </td>
+                      <td className="py-4 px-6 text-gray-700">${item?.price}</td>
+                      <td className="py-4 px-6 text-gray-700">{item?.quantity}</td>
                       <td className="py-4 px-6 font-semibold text-gray-800">
                         ${(item?.price * item?.quantity).toFixed(2)}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <div className="flex justify-center gap-3">
-                          {/* Edit Button */}
                           <span
-                            onClick={() => {
-                              setIsModalOpen(true);
-                              setProd(item);
-                            }}
+                            onClick={() => handleEditClick(item)}
                             className="bg-black text-white p-2 rounded-md hover:bg-gray-800 transition"
                             title="Edit"
                           >
                             <RiEditCircleFill className="cursor-pointer" />
                           </span>
 
-                          {/* Delete Button */}
                           <span
-                            onClick={() => HandleDeleteCart(item.id)}
+                            onClick={() => HandleDeleteCart(item.id, item.size, item.color)}
                             className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition"
                             title="Delete"
                           >
@@ -127,7 +154,7 @@ const Cart = () => {
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-5">
-              {cartItems.map((item, index) => (
+              {cart.map((item, index) => (
                 <div
                   key={index}
                   className="border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition"
@@ -151,16 +178,13 @@ const Cart = () => {
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button
-                      onClick={() => {
-                        setIsModalOpen(true);
-                        setProd(item);
-                      }}
+                      onClick={() => handleEditClick(item)}
                       className="flex-1 bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => HandleDeleteCart(item.id)}
+                      onClick={() => HandleDeleteCart(item.id, item.size, item.color)}
                       className="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition"
                     >
                       Remove
@@ -175,17 +199,14 @@ const Cart = () => {
               <div className="bg-gray-100 p-6 rounded-2xl shadow-md w-full sm:w-2/3 md:w-1/3">
                 <div className="flex justify-between mb-3 text-gray-700">
                   <span>Items in Cart:</span>
-                  <span className="font-semibold">{cartcout}</span>
+                  <span className="font-semibold">{cartCount}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-900">
                   <span>Total:</span>
                   <span>
                     $
-                    {cartItems
-                      .reduce(
-                        (sum, item) => sum + item.price * item.quantity,
-                        0
-                      )
+                    {cart
+                      .reduce((sum, item) => sum + item.price * item.quantity, 0)
                       .toFixed(2)}
                   </span>
                 </div>

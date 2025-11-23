@@ -6,7 +6,7 @@ import { Link, NavLink } from "react-router-dom";
 import { ProductContext } from "../Context/ProductContext";
 
 const Navbar = () => {
-  const { cartcout } = useContext(ProductContext);
+  const { cartCount } = useContext(ProductContext); // <-- fixed
 
   const navlinks = [
     { id: 1, name: "About", path: "/about" },
@@ -17,18 +17,17 @@ const Navbar = () => {
     { id: 6, name: "Children", path: "/children" },
   ];
 
-  const [isMenuOpen, setIsmenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const HandlMenuOpen = () => {
-    setIsmenuOpen((prv) => !prv);
-  };
+  const HandlMenuOpen = () => setIsMenuOpen((prev) => !prev);
 
   return (
     <div className="sticky top-0 left-0 z-40">
-      {/* LargeScreenNav */}
+      {/* Large Screen Navbar */}
       <div className="hidden lg:block">
         <div className="w-full bg-primary px-6 lg:px-16 py-6 flex items-center justify-between text-white relative">
+          {/* Logo */}
           <Link to={"/"} className="logo font-bold font-serif italic text-2xl">
             Granduer
           </Link>
@@ -62,7 +61,7 @@ const Navbar = () => {
               <FiSearch />
             </span>
 
-            {/* Search input (toggles on click) */}
+            {/* Search input */}
             {searchOpen && (
               <div className="absolute right-[120px] top-1/2 -translate-y-1/2">
                 <div className="flex items-center bg-white border border-gray-300 rounded-3xl overflow-hidden w-64">
@@ -96,22 +95,23 @@ const Navbar = () => {
               to={"/cart"}
             >
               <FaShoppingCart />
-              <span className="absolute border-[1px] border-white count -top-2 -right-3 h-5 w-5 p-2 rounded-full bg-white text-primary flex justify-center items-center font-bold">
-                {(cartcout && cartcout) || 0}
+              <span className="absolute border-[1px] border-white -top-2 -right-3 h-5 w-5 p-2 rounded-full bg-white text-primary flex justify-center items-center font-bold">
+                {cartCount || 0}
               </span>
             </NavLink>
           </div>
 
-          {/* Menu Icon */}
+          {/* Menu icon for mobile */}
           <span className="flex justify-center items-center p-4 lg:hidden h-16 w-16 rounded-md text-white text-3xl font-bold">
             <CiMenuFries />
           </span>
         </div>
       </div>
 
-      {/* SmallScreen */}
+      {/* Small Screen Navbar */}
       <div className="lg:hidden block">
         <div className="relative w-full bg-primary px-6 lg:px-16 py-6 flex items-center justify-between text-white">
+          {/* Mobile Search */}
           {searchOpen && (
             <div className="bg-primary py-2 flex justify-center absolute items-center z-20 left-16 md:left-[30%] w-[50%] md:w-[40%]">
               <div className="flex items-center bg-white border w-full border-gray-300 rounded-3xl overflow-hidden">
@@ -132,10 +132,14 @@ const Navbar = () => {
               to={"/cart"}
               className={`${
                 searchOpen ? "md:block hidden" : ""
-              } border-[1px] border-white bg-black p-[7px] rounded-3xl text-sm`}
+              } border-[1px] border-white bg-black p-[7px] rounded-3xl text-sm relative`}
             >
               <FaShoppingCart />
+              <span className="absolute border-[1px] border-white -top-2 -right-3 h-5 w-5 p-2 rounded-full bg-white text-primary flex justify-center items-center font-bold">
+                {cartCount || 0}
+              </span>
             </NavLink>
+
             <button
               onClick={() => setSearchOpen((prev) => !prev)}
               className="border-[1px] relative z-40 border-white bg-black p-[7px] rounded-3xl text-sm"
@@ -144,12 +148,12 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* logo */}
+          {/* Logo */}
           <Link to={"/"} className="logo font-bold font-serif italic text-2xl">
             Granduer
           </Link>
 
-          {/* Menu and user */}
+          {/* Menu and User */}
           <div className="flex justify-center items-center gap-4">
             <Link
               to={"/login"}
@@ -159,14 +163,14 @@ const Navbar = () => {
             </Link>
 
             <span
-              onClick={() => HandlMenuOpen()}
+              onClick={HandlMenuOpen}
               className="flex cursor-pointer justify-center items-center p-4 lg:hidden h-16 w-16 rounded-md text-white text-3xl font-bold"
             >
               <CiMenuFries />
             </span>
           </div>
 
-          {/* Mobile Nav */}
+          {/* Mobile Nav Links */}
           <div
             className={`${
               isMenuOpen

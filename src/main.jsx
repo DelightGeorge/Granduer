@@ -11,80 +11,43 @@ import Men from "./pages/Men.jsx";
 import Children from "./pages/Children.jsx";
 import NewArrivals from "./pages/NewArrivals.jsx";
 import Cart from "./pages/Cart.jsx";
-import ProductProvider from "./Context/ProductContext.jsx";
+import { ProductProvider } from "./Context/ProductContext.jsx";
 import SingleProduct from "./pages/SingleProduct.jsx";
-
 import UserLoginPage from "./pages/UserLogin.jsx";
-
 import UserDash from "./Dashboard_Pages/UserDashboard.jsx";
 import AllProducts from "./pages/AllProducts.jsx";
 import Dashboard from "./Dashboard_Pages/Dashboard.jsx";
+import CreateProduct from "./pages/CreateProduct.jsx";
+import ThankYouPage from "./pages/ThankYouPage.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: "/about",
-        element: <About />,
-      },
-      {
-        path: "/contact",
-        element: <Contact />,
-      },
-      {
-        path: "/women",
-        element: <Women />,
-      },
-      {
-        path: "/men",
-        element: <Men />,
-      },
-      {
-        path: "/children",
-        element: <Children />,
-      },
-      {
-        path: "/newarrivals",
-        element: <NewArrivals />,
-      },
-      {
-        path: "/cart",
-        element: <Cart />,
-      },
-      {
-        path: "/product/:id",
-        element: <SingleProduct />,
-      },
-      {
-        path: "/login",
-        element: <UserLoginPage />,
-      },
-      {
-        path: "/dashboard",
-        element: <Dashboard />,
-      },
-      {
-        path: "/userdashboard",
-        element: <UserDash />,
-      },
-            {
-        path: "/all-products",
-        element: <AllProducts />,
-      },
-
+      { index: true, element: <Home /> },
+      { path: "/about", element: <About /> },
+      { path: "/contact", element: <Contact /> },
+      { path: "/women", element: <Women /> },
+      { path: "/men", element: <Men /> },
+      { path: "/children", element: <Children /> },
+      { path: "/newarrivals", element: <NewArrivals /> },
+      { path: "/cart", element: <Cart /> },
+      { path: "/product/:id", element: <SingleProduct /> },
+      { path: "/login", element: <UserLoginPage /> },
+      { path: "/dashboard", element: <Dashboard /> },
+      { path: "/userdashboard", element: <UserDash /> },
+      { path: "/all-products", element: <AllProducts /> },
+      { path: "/create-product", element: <CreateProduct /> },
+      { path: "/thank-you", element: <ThankYouPage /> },
     ],
   },
 ]);
+
 createRoot(document.getElementById("root")).render(
-  <ProductProvider>
-    <StrictMode>
+  <StrictMode>
+    <ProductProvider>
       <RouterProvider router={router} />
-    </StrictMode>
-  </ProductProvider>
+    </ProductProvider>
+  </StrictMode>
 );

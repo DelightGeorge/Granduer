@@ -1,159 +1,142 @@
-import { createContext, useEffect, useState } from "react";
-const ProductContext = createContext();
-import { ToastContainer, toast } from "react-toastify";
+import React, { createContext, useState, useEffect } from "react";
 
-const ProductProvider = ({ children }) => {
-  const [productData, setProductData] = useState(null);
-  const [isAuthentified, setisAuthentified] = useState(false);
-  const [cartcout, setCartCount] = useState(0);
-  const [cartItems, setCartItems] = useState(
-    JSON.parse(localStorage.getItem("cartItems")) || []
-  );
+export const ProductContext = createContext();
 
-  useEffect(() => {
-    console.log("cart:", cartItems);
-    if (cartItems) {
-      const count = cartItems?.reduce((acc, curr) => acc + curr?.quantity, 0);
-      setCartCount(count);
-    }
-  }, [cartItems]);
+export const ProductProvider = ({ children }) => {
+  const [productData, setProductData] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const HandleAddTCart = (prod, quantity = null, size = null, color = null) => {
-    if (!isAuthentified) {
-      let storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+  const [cart, setCart] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
-      const existingItem = storedCartItems.find(
-        (item) => parseInt(item.id) === parseInt(prod.id)
-      );
+  // Selected product states for editing/viewing
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
 
-      let updatedCartItems;
-
-      if (existingItem) {
-        updatedCartItems = storedCartItems.map((item) =>
-          parseInt(item.id) === parseInt(prod.id)
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-
-        toast.info("Existing Item quantity added to cart successfully");
-      } else {
-        updatedCartItems = [
-          ...storedCartItems,
-          { ...prod, quantity, size, color },
-        ];
-        toast.success("Item added to cart successfully");
-      }
-
-      localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-      setCartItems(updatedCartItems);
-      console.log("Updated Cart:", updatedCartItems);
-    } else {
-      console.log("User is authenticated - handle API cart instead");
-    }
-  };
-
+  // ----------------------------
+  // Products Fetch
+  // ----------------------------
   const HandleGetProducts = async () => {
     try {
-      const res = await fetch("http://localhost:8000/products", {
-        method: "GET",
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        console.log(data);
-        setProductData(data);
-      } else {
-        console.log("Unable to fetch data");
-      }
-    } catch (error) {
-      console.log(error.message);
+      const res = await fetch("http://localhost:5000/getAllProduct");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const result = await res.json();
+      setProductData(result.data);
+      setFilteredProducts(result.data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
     }
   };
 
-  const HandleUpdateCart = async (prod) => {
-    try {
-      if (!isAuthentified) {
-        const storedCartItems = JSON.parse(localStorage.getItem("cartItems"));
-
-        const existingProduct = storedCartItems.find(
-          (item) => parseInt(item?.id) === parseInt(prod?.id)
-        );
-
-        if (!existingProduct) {
-          toast.error("Product does not exist in cart!");
-          return;
-        }
-
-        const updatedCartItems = storedCartItems.map((item) =>
-          parseInt(item?.id) === parseInt(prod?.id)
-            ? {
-                ...item,
-                size: prod?.size ?? item?.size,
-                quantity: prod?.quantity ?? item?.quantity,
-                color: prod?.color ?? item?.color,
-              }
-            : item
-        );
-
-        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-        setCartItems(updatedCartItems);
-        toast.success("Cart item updated successfully");
-      } else {
-        console.log("Authentified user");
-      }
-    } catch (error) {
-      console.log(error?.message);
+  // Filter products by search term
+  useEffect(() => {
+    if (!searchTerm) setFilteredProducts(productData);
+    else {
+      const filtered = productData.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered);
     }
+  }, [searchTerm, productData]);
+
+  // ----------------------------
+  // Cart Functions
+  // ----------------------------
+  const updateCartCount = (cartArray) => {
+    const total = cartArray.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(total);
   };
 
-  const HandleDeleteCart = async (prodId) => {
-    try {
-      if (!isAuthentified) {
-        const storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+  const HandleAddTCart = (prod, qty = 1, size = "", color = "") => {
+    if (!prod) return;
 
-        const existingProduct = storedCartItems?.find(
-          (item) => parseInt(item?.id) === parseInt(prodId)
-        );
+    const itemSize = size || "";
+    const itemColor = color || "";
 
-        if (!existingProduct) {
-          toast.error("Product not found in cart!");
-          return;
-        }
+    let updatedCart = [...cart];
+    const existingIndex = updatedCart.findIndex(
+      (item) =>
+        item.id === prod.id &&
+        (item.size || "") === itemSize &&
+        (item.color || "") === itemColor
+    );
 
-        const updatedCartItems = storedCartItems.filter(
-          (item) => parseInt(item?.id) !== parseInt(prodId)
-        );
-
-        localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-        setCartItems(updatedCartItems);
-        toast.success("Item removed from cart successfully");
-      } else {
-        console.log("Authenticated user - handle API cart delete here");
-      }
-    } catch (error) {
-      console.log(error?.message);
+    if (existingIndex >= 0) {
+      updatedCart[existingIndex].quantity += qty;
+    } else {
+      updatedCart.push({ ...prod, quantity: qty, size: itemSize, color: itemColor });
     }
+
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    updateCartCount(updatedCart);
   };
+
+  const HandleUpdateCart = (prodId, newQty, size = "", color = "") => {
+    let updatedCart = cart.map((item) => {
+      if (
+        item.id === prodId &&
+        (item.size || "") === (size || "") &&
+        (item.color || "") === (color || "")
+      ) {
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    updateCartCount(updatedCart);
+  };
+
+  const HandleDeleteCart = (prodId, size = "", color = "") => {
+    let updatedCart = cart.filter(
+      (item) =>
+        !(item.id === prodId && (item.size || "") === (size || "") && (item.color || "") === (color || ""))
+    );
+
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    updateCartCount(updatedCart);
+  };
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      const parsedCart = JSON.parse(savedCart);
+      setCart(parsedCart);
+      updateCartCount(parsedCart);
+    }
+  }, []);
 
   return (
     <ProductContext.Provider
       value={{
+        productData,
+        filteredProducts,
         HandleGetProducts,
         HandleAddTCart,
         HandleUpdateCart,
-        HandleDeleteCart, 
-        productData,
-        cartItems,
-        cartcout,
-        setisAuthentified,
+        HandleDeleteCart,
+        cart,
+        cartCount,
+        searchTerm,
+        setSearchTerm,
+        selectedProduct,
+        setSelectedProduct,
+        quantity,
+        setQuantity,
+        selectedSize,
+        setSelectedSize,
+        selectedColor,
+        setSelectedColor,
       }}
     >
       {children}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar pauseOnHover theme="colored" />
     </ProductContext.Provider>
   );
 };
-
-export default ProductProvider;
-export { ProductContext };
