@@ -107,7 +107,7 @@ formData.append("password", inputs.password);
 formData.append("confirmpassword", inputs.confirmpassword);
 if (inputs.image) formData.append("image", inputs.image);
 
-await axios.post("http://localhost:5000/registerUser", formData);
+await axios.post("https://ecombackend-6znk.onrender.com/registerUser", formData);
 
 
 
