@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { GridLoader } from "react-spinners";
 
-export const baseUrl = "http://localhost:5000/";
+export const baseUrl = "https://ecombackend-6znk.onrender.com/";
 
 function App() {
   const [loading, setLoading] = useState(true);
