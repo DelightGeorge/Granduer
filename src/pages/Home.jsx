@@ -1,39 +1,18 @@
 import LinesEllipsis from "react-lines-ellipsis";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import {
-  FacebookShareButton,
-  FacebookIcon,
-  TwitterShareButton,
-  TwitterIcon,
-  WhatsappShareButton,
-  WhatsappIcon,
-  TelegramShareButton,
-  TelegramIcon,
-  LinkedinShareButton,
-  LinkedinIcon,
-  PinterestShareButton,
-  PinterestIcon,
-  RedditShareButton,
-  RedditIcon,
-  EmailShareButton,
-  EmailIcon,
-} from "react-share";
-import "react-toastify/dist/ReactToastify.css";
 import { Link, NavLink } from "react-router-dom";
 import { FaArrowCircleRight, FaArrowRight, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout";
 
-
 const Home = () => {
   const { HandleGetProducts, productData, HandleAddTCart } = useContext(ProductContext);
   const [bestSeller, setBestSeller] = useState([]);
-  const [few, setFew] = useState([]);
+  const [fewItems, setFewItems] = useState([]);
   const [fewDisplay, setFewDisplay] = useState(true);
 
   useEffect(() => {
@@ -43,7 +22,7 @@ const Home = () => {
 
   useEffect(() => {
     if (productData && productData.length > 0) {
-      setFew(productData.slice(0, 3));
+      setFewItems(productData.slice(0, 3));
       const found = productData.filter((item) => item.bestSeller === true);
       setBestSeller(found.length > 0 ? found : productData);
     }
@@ -99,64 +78,44 @@ const Home = () => {
             }}
             className="w-full h-72 lg:h-72 xl:h-96 flex flex-col justify-center items-center"
           >
-            {productData &&
-              productData.map((product) => (
-                <SwiperSlide
-                  key={product.id}
-                  className="flex justify-center items-center md:w-full w-1/2 mt-10 rounded-t-[50%] overflow-hidden"
-                >
-                  <Link to={`/product/${product.id}`} className="w-full h-full">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="object-cover w-full h-full"
-                    />
-                  </Link>
-                </SwiperSlide>
-              ))}
+            {productData?.map((product) => (
+              <SwiperSlide
+                key={product.id}
+                className="flex justify-center items-center md:w-full w-1/2 mt-10 rounded-t-[50%] overflow-hidden"
+              >
+                <Link to={`/product/${product.id}`} className="w-full h-full">
+                  <img src={product.image} alt="Fashion" className="object-cover w-full h-full" />
+                </Link>
+              </SwiperSlide>
+            ))}
           </Swiper>
         </div>
 
         {/* Best Seller Section */}
         <div className="bg-white lg:pt-12 pt-2">
-          <p className="text-center text-primary text-2xl font-semibold w-full mt-8">
-            Best Seller
-          </p>
+          <p className="text-center text-primary text-2xl font-semibold w-full mt-8">Best Seller</p>
           <p className="text-center text-primary w-full mt-2 text-lg">
             Stay cozy and stylish with our exclusive collection of best-selling Hoodies
           </p>
 
           <div className="px-4 md:px-10 lg:px-20 grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-x-8 md:gap-y-16 gap-16 justify-center items-stretch lg:mt-6 mt-8">
-            {(fewDisplay ? few : bestSeller)?.map((item) => (
+            {(fewDisplay ? fewItems : bestSeller)?.map((item) => (
               <div
                 key={item.id}
                 className="hover:shadow-2xl transition ease-in-out duration-500 rounded-md overflow-hidden"
               >
                 <div className="w-full h-[26rem] overflow-hidden">
                   <Link to={`/product/${item.id}`} className="w-full h-full">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="object-cover w-full h-full"
-                    />
+                    <img src={item.image} alt="Fashion" className="object-cover w-full h-full" />
                   </Link>
                 </div>
                 <div className="p-2">
                   <p className="text-black font-bold mt-2">{item.name}</p>
                   <div className="w-full">
-                    <LinesEllipsis
-                      text={item.description}
-                      maxLine="1"
-                      ellipsis="..."
-                      trimRight
-                    />
+                    <LinesEllipsis text={item.description} maxLine="1" ellipsis="..." trimRight />
                   </div>
-
                   <div className="flex justify-between items-center mt-2">
-                    <span className="p-2 bg-primary text-white rounded-md">
-                      ${item.price}
-                    </span>
-
+                    <span className="p-2 bg-primary text-white rounded-md">${item.price}</span>
                     <div className="flex justify-between items-center gap-4">
                       <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
                         <FaHeart className="h-6 w-6" />
@@ -181,8 +140,7 @@ const Home = () => {
               onClick={() => setFewDisplay(!fewDisplay)}
               className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
             >
-              {fewDisplay ? "See More" : "See Less"}
-              <FaArrowRight />
+              {fewDisplay ? "See More" : "See Less"} <FaArrowRight />
             </span>
           </div>
         </div>

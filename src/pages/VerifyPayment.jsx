@@ -45,16 +45,16 @@ export default function ThankYouPage() {
       hasVerified.current = true;
 
       try {
-        const res = await fetch(
-          `${baseUrl}verifyPayment?transaction_id=${transactionId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${baseUrl}verifypayment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            transaction_id: transactionId,
+          }),
+        });
 
         const data = await res.json();
 
@@ -163,9 +163,15 @@ export default function ThankYouPage() {
           {receiptData && (
             <div className="bg-blue-50 p-5 rounded-2xl text-left mb-6">
               <h3 className="font-bold mb-2">Order Details</h3>
-              <p><strong>Order ID:</strong> {receiptData.orderId}</p>
-              <p><strong>Amount:</strong> ₦{receiptData.amount}</p>
-              <p><strong>Status:</strong> {receiptData.status}</p>
+              <p>
+                <strong>Order ID:</strong> {receiptData.orderId}
+              </p>
+              <p>
+                <strong>Amount:</strong> ₦{receiptData.amount}
+              </p>
+              <p>
+                <strong>Status:</strong> {receiptData.status}
+              </p>
             </div>
           )}
 

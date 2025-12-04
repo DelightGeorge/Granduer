@@ -11,14 +11,17 @@ import Men from "./pages/Men.jsx";
 import Children from "./pages/Children.jsx";
 import NewArrivals from "./pages/NewArrivals.jsx";
 import Cart from "./pages/Cart.jsx";
-import { ProductProvider } from "./Context/ProductContext.jsx";
+
 import SingleProduct from "./pages/SingleProduct.jsx";
 import UserLoginPage from "./pages/UserLogin.jsx";
 import UserDash from "./Dashboard_Pages/UserDashboard.jsx";
 import AllProducts from "./pages/AllProducts.jsx";
 import Dashboard from "./Dashboard_Pages/Dashboard.jsx";
-import CreateProduct from "./pages/CreateProduct.jsx";
+import CreateProduct from "./Dashboard_Pages/CreateProduct.jsx";
 import ThankYouPage from "./pages/ThankYouPage.jsx";
+import FavouritesPage from "./pages/FavouritesPage.jsx";
+import ProductProvider from "./Context/ProductContext.jsx";
+import VerifyPayment from "./pages/VerifyPayment.jsx";
 
 const router = createBrowserRouter([
   {
@@ -40,6 +43,8 @@ const router = createBrowserRouter([
       { path: "/all-products", element: <AllProducts /> },
       { path: "/create-product", element: <CreateProduct /> },
       { path: "/thank-you", element: <ThankYouPage /> },
+      { path: "/favourites", element: <FavouritesPage /> },
+      { path: "/verifypayment/:transaction_id", element: <VerifyPayment /> },
     ],
   },
 ]);

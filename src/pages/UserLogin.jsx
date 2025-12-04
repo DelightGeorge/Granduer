@@ -1,26 +1,38 @@
-import { useState } from "react";
-import { FiMail, FiLock, FiUser, FiPhone } from "react-icons/fi";
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import PulseLoader from "react-spinners/PulseLoader";
+import { FaEye, FaEyeSlash, FaSignInAlt, FaUser } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 import Layout from "../Shared/Layout";
-import Input from "../Context/Input";
+import { loginUser, registerUser, getCurrentUser } from "../services/UserService";
+import { ProductContext } from "../Context/ProductContext";
+import axios from "axios";
 
 const UserLoginPage = () => {
+  const { setCartItems, setIsAuthentified, setToken } = useContext(ProductContext);
+  const navigate = useNavigate();
+
   const [isLogin, setIsLogin] = useState(true);
-  const [isReset, setIsReset] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [inputs, setInputs] = useState({
     email: "",
     password: "",
-    fullName: "",
+    firstname: "",
+    lastname: "",
     phone: "",
-    confirmPassword: "",
+    address: "",
+    confirmpassword: "",
+    image: null,
     rememberMe: false,
   });
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e) => {
+    const { name, value, type, checked, files } = e.target;
     setInputs((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
     }));
   };
 
@@ -28,206 +40,197 @@ const UserLoginPage = () => {
     setInputs({
       email: "",
       password: "",
-      fullName: "",
+      firstname: "",
+      lastname: "",
       phone: "",
-      confirmPassword: "",
+      address: "",
+      confirmpassword: "",
+      image: null,
       rememberMe: false,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Submitted:", inputs);
-    resetInputs();
-  };
+    setLoading(true);
 
-  const handleResetPassword = (e) => {
-    e.preventDefault();
-    if (!inputs.email.trim()) {
-      alert("Please enter your email to reset password.");
-      return;
+    try {
+      if (isLogin) {
+        // Login
+        const { email, password } = inputs;
+        if (!email || !password) {
+          toast.error("Email and password are required!");
+          setLoading(false);
+          return;
+        }
+
+        const res = await loginUser(email, password);
+
+        if (res.success) {
+          toast.success(res.message || "Login successful!");
+          setCartItems([]);
+          localStorage.setItem("isAuthentified", "true");
+          setIsAuthentified(true);
+          setToken(res.token);
+
+          // Store user info
+          const userInfo = getCurrentUser();
+          if (userInfo) localStorage.setItem("user", JSON.stringify(userInfo));
+
+          navigate("/dashboard");
+        } else {
+          toast.error(res.message || "Login failed!");
+        }
+      } else {
+        // Registration
+        const { firstname, lastname, email, phone, address, password, confirmpassword, image } = inputs;
+
+        if (!firstname || !lastname || !email || !phone || !address || !password || !confirmpassword) {
+          toast.error("Please fill in all required fields!");
+          setLoading(false);
+          return;
+        }
+
+        if (password !== confirmpassword) {
+          toast.error("Passwords do not match!");
+          setLoading(false);
+          return;
+        }
+
+const formData = new FormData();
+formData.append("firstname", inputs.firstname);
+formData.append("lastname", inputs.lastname);
+formData.append("email", inputs.email);
+formData.append("phone", inputs.phone);
+formData.append("address", inputs.address);
+formData.append("password", inputs.password);
+formData.append("confirmpassword", inputs.confirmpassword);
+if (inputs.image) formData.append("image", inputs.image);
+
+await axios.post("http://localhost:5000/registerUser", formData);
+
+
+
+        const res = await registerUser(formData);
+
+        if (res.success) {
+          toast.success(res.message || "Registration successful!");
+          resetInputs();
+          setIsLogin(true);
+        } else {
+          toast.error(res.message || "Registration failed!");
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error.message || "Something went wrong!");
+    } finally {
+      setLoading(false);
     }
-    alert(`A password reset link has been sent to ${inputs.email}`);
-    resetInputs();
-    setIsReset(false);
   };
 
   return (
     <Layout>
-      <div className="flex justify-center items-center min-h-screen bg-primary px-4">
-        <div className="relative bg-white w-full max-w-md rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] overflow-hidden">
-          {!isReset && (
-            <div className="flex">
-              <button
-                onClick={() => {
-                  setIsLogin(true);
-                  resetInputs();
-                }}
-                className={`w-1/2 py-3 font-semibold transition-all ${
-                  isLogin
-                    ? "bg-black text-white"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                Login
-              </button>
-              <button
-                onClick={() => {
-                  setIsLogin(false);
-                  resetInputs();
-                }}
-                className={`w-1/2 py-3 font-semibold transition-all ${
-                  !isLogin
-                    ? "bg-black text-white"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                Sign Up
-              </button>
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+        {loading && (
+          <div className="fixed inset-0 z-50 flex justify-center items-center bg-white bg-opacity-75">
+            <div className="flex flex-col items-center">
+              <PulseLoader size={12} color="#000" />
+              <p className="text-black mt-2 font-semibold">Processing...</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* LOGIN */}
-          {isLogin && !isReset && (
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
-                Welcome Back
-              </h2>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <Input
+        <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+          {/* Toggle Login/SignUp */}
+          <div className="flex">
+            <button
+              onClick={() => { setIsLogin(true); resetInputs(); }}
+              className={`w-1/2 py-4 font-semibold ${isLogin ? "bg-black text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => { setIsLogin(false); resetInputs(); }}
+              className={`w-1/2 py-4 font-semibold ${!isLogin ? "bg-black text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-4">
+            <div className="flex justify-center mb-6">
+              <div className="bg-black text-white p-4 rounded-full">
+                {isLogin ? <FaSignInAlt size={32} /> : <FaUser size={32} />}
+              </div>
+            </div>
+
+            {isLogin ? (
+              <>
+                <h2 className="text-3xl font-bold text-center mb-2">Welcome Back</h2>
+                <p className="text-center text-gray-600 mb-6">Sign in to your account</p>
+
+                <input
                   type="email"
-                  labelFor="Email"
                   name="email"
                   value={inputs.email}
-                  onChange={handleInputChange}
-                  placehold="Enter your email"
+                  onChange={handleChange}
+                  placeholder="Enter your email"
+                  className="w-full p-3 rounded-lg border-2"
                 />
-                <Input
-                  type="password"
-                  labelFor="Password"
-                  name="password"
-                  value={inputs.password}
-                  onChange={handleInputChange}
-                  placehold="Enter your password"
-                />
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="rememberMe"
-                      checked={inputs.rememberMe}
-                      onChange={handleInputChange}
-                      className="accent-black w-4 h-4"
-                    />
-                    Remember me
-                  </label>
+
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={inputs.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    className="w-full p-3 pr-10 rounded-lg border-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  className="bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition"
-                >
-                  Login
-                </button>
-              </form>
-              <span
-                onClick={() => setIsReset(true)}
-                className="hover:underline cursor-pointer font-medium flex justify-center items-center mt-3"
-              >
-                Forgot Password?
-              </span>
-            </div>
-          )}
 
-          {/* SIGNUP */}
-          {!isLogin && !isReset && (
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
-                Create Account
-              </h2>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <Input
-                  type="text"
-                  labelFor="Full Name"
-                  name="fullName"
-                  value={inputs.fullName}
-                  onChange={handleInputChange}
-                  placehold="Full Name"
-                />
-                <Input
-                  type="text"
-                  labelFor="Phone Number"
-                  name="phone"
-                  value={inputs.phone}
-                  onChange={handleInputChange}
-                  placehold="Phone Number"
-                />
-                <Input
-                  type="email"
-                  labelFor="Email"
-                  name="email"
-                  value={inputs.email}
-                  onChange={handleInputChange}
-                  placehold="Email"
-                />
-                <Input
-                  type="password"
-                  labelFor="Password"
-                  name="password"
-                  value={inputs.password}
-                  onChange={handleInputChange}
-                  placehold="Password"
-                />
-                <Input
-                  type="password"
-                  labelFor="Confirm Password"
-                  name="confirmPassword"
-                  value={inputs.confirmPassword}
-                  onChange={handleInputChange}
-                  placehold="Confirm Password"
-                />
                 <button
                   type="submit"
-                  className="bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition"
+                  className="bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800"
                 >
-                  Sign Up
+                  Sign In
                 </button>
-              </form>
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold text-center mb-2">Create Account</h2>
 
-          {/* FORGOT PASSWORD */}
-          {isReset && (
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
-                Reset Password
-              </h2>
-              <form
-                onSubmit={handleResetPassword}
-                className="flex flex-col gap-4"
-              >
-                <Input
-                  type="email"
-                  labelFor="Email"
-                  name="email"
-                  value={inputs.email}
-                  onChange={handleInputChange}
-                  placehold="Enter your email"
-                />
-                <button
-                  type="submit"
-                  className="bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition"
-                >
-                  Send Reset Link
+                <input type="text" name="firstname" placeholder="First Name" value={inputs.firstname} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+                <input type="text" name="lastname" placeholder="Last Name" value={inputs.lastname} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+                <input type="email" name="email" placeholder="Email" value={inputs.email} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+                <input type="tel" name="phone" placeholder="Phone" value={inputs.phone} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+                <input type="text" name="address" placeholder="Address" value={inputs.address} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" value={inputs.password} onChange={handleChange} className="w-full p-3 pr-10 rounded-lg border-2" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+
+                <input type="password" name="confirmpassword" placeholder="Confirm Password" value={inputs.confirmpassword} onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+
+                <input type="file" name="image" accept="image/*" onChange={handleChange} className="w-full p-3 rounded-lg border-2" />
+
+                <button type="submit" className="bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800">
+                  Create Account
                 </button>
-                <p
-                  onClick={() => setIsReset(false)}
-                  className="text-center text-sm text-gray-600 hover:underline cursor-pointer"
-                >
-                  Back to Login
-                </p>
-              </form>
-            </div>
-          )}
+              </>
+            )}
+          </form>
         </div>
       </div>
     </Layout>

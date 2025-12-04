@@ -1,191 +1,262 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import Layout from "../Shared/Layout";
+
 import { RiDeleteBin3Fill, RiEditCircleFill } from "react-icons/ri";
+import { Link } from "react-router-dom";
 import { ImCancelCircle } from "react-icons/im";
+import { toast } from "react-toastify";
+import Edit from "../Context/Edit";
+import Layout from "../Shared/Layout";
+import { baseUrl } from "../App";
 
 const Cart = () => {
-  const { cart, cartCount, HandleDeleteCart, HandleUpdateCart } = useContext(ProductContext);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [product, setProduct] = useState(null);
+  const {
+    cartItems,
+    cartCount,
+    HandleDeleteCart,
+    user,
+    isAuthentified,
+    setCartItems,
+    token,
+  } = useContext(ProductContext);
 
-  // Open modal and set selected product
-  const handleEditClick = (item) => {
-    setProduct({ ...item }); // clone to avoid direct state mutation
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [prod, setProd] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync modal selections with product
+  useEffect(() => {
+    if (prod) {
+      setProd((prev) => ({
+        ...prev,
+        size: selectedSize || prev.size,
+        color: selectedColor || prev.color,
+        quantity: quantity || prev.quantity,
+      }));
+    }
+  }, [selectedSize, selectedColor, quantity]);
+
+  const handleOpenModal = (item) => {
+    setProd(item);
+    setSelectedSize(item.size || "");
+    setSelectedColor(item.color || "");
+    setQuantity(item.quantity || 1);
     setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  const handleGuestDelete = (item) => {
+    const exists = cartItems.find(
+      (i) => i.id === item.id && i.size === item.size && i.color === item.color
+    );
+
+    if (!exists) return;
+
+    let updatedCart;
+    if (exists.quantity > 1) {
+      updatedCart = cartItems.map((i) =>
+        i.id === item.id && i.size === item.size && i.color === item.color
+          ? { ...i, quantity: i.quantity - 1 }
+          : i
+      );
+      toast.info(`Decreased quantity of ${item.name || item.product?.name}`);
+    } else {
+      updatedCart = cartItems.filter(
+        (i) =>
+          !(i.id === item.id && i.size === item.size && i.color === item.color)
+      );
+      toast.success(`${item.name || item.product?.name} removed from cart`);
+    }
+
+    setCartItems(updatedCart);
+    localStorage.setItem("cartItems", JSON.stringify(updatedCart));
+  };
+
+  const handleDelete = (item) => {
+    if (isAuthentified && token) {
+      HandleDeleteCart({ userid: user.id, productid: item.id });
+      toast.success(`${item.name || item.product?.name} removed from cart`);
+    } else {
+      handleGuestDelete(item);
+    }
+  };
+
+  // PAYMENT INITIALIZATION
+  const HandleInitializePayment = async (e) => {
+    e.preventDefault();
+
+    if (!isAuthentified || !token) {
+      toast.error("You must log in to proceed with checkout");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}initialize-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // use token from context
+        },
+        body: JSON.stringify({
+          email: user?.email,
+          amount: cartItems.reduce(
+            (sum, i) => sum + (i.price || i.product?.price) * i.quantity,
+            0
+          ),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data?.link) {
+        toast.success("Redirecting to payment...");
+        window.location.href = data.link;
+      } else {
+        toast.error(data?.message || "Payment failed");
+      }
+    } catch (error) {
+      console.error("Init Pay Error:", error);
+      toast.error("Payment initialization failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white py-10 px-4 md:px-10 flex flex-col">
-        <h1 className="text-4xl font-bold text-center mb-10 tracking-wide">
-          Your Cart
-        </h1>
+      <div className="min-h-screen bg-white py-10 px-4 md:px-10 relative flex flex-col">
+        <h1 className="text-3xl font-bold text-center mb-8">Your Cart</h1>
 
-        {/* Edit Modal */}
-        {isModalOpen && product && (
-          <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-            <div className="relative w-[92%] max-w-3xl bg-white rounded-2xl shadow-2xl p-6">
-              <span
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-black"
-              >
-                <ImCancelCircle className="h-5 w-5" />
-              </span>
-
-              <h2 className="text-xl font-bold mb-4">{product.name}</h2>
-
-              {/* Quantity */}
-              <div className="mb-4">
-                <label className="block mb-1">Quantity</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={product.quantity}
-                  onChange={(e) =>
-                    setProduct({ ...product, quantity: parseInt(e.target.value) })
-                  }
-                  className="border px-3 py-2 rounded w-full"
-                />
-              </div>
-
-              {/* Size */}
-              <div className="mb-4">
-                <label className="block mb-1">Size</label>
-                <input
-                  type="text"
-                  value={product.size || ""}
-                  onChange={(e) =>
-                    setProduct({ ...product, size: e.target.value })
-                  }
-                  className="border px-3 py-2 rounded w-full"
-                />
-              </div>
-
-              {/* Color */}
-              <div className="mb-4">
-                <label className="block mb-1">Color</label>
-                <input
-                  type="text"
-                  value={product.color || ""}
-                  onChange={(e) =>
-                    setProduct({ ...product, color: e.target.value })
-                  }
-                  className="border px-3 py-2 rounded w-full"
-                />
-              </div>
-
+        {/* Modal */}
+        {isModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={handleCloseModal}
+          >
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div
+              className="relative bg-white rounded-xl shadow-lg w-full max-w-lg p-6 z-10 animate-fadeIn"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
-                onClick={() => {
-                  HandleUpdateCart(
-                    product.id,
-                    product.quantity,
-                    product.size,
-                    product.color
-                  );
-                  setIsModalOpen(false);
-                }}
-                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
+                onClick={handleCloseModal}
+                className="absolute top-4 right-4 text-gray-600 hover:text-red-500 transition"
               >
-                Save Changes
+                <ImCancelCircle className="h-8 w-8" />
               </button>
+
+              <Edit
+                prod={prod}
+                setSelectedSize={setSelectedSize}
+                setSelectedColor={setSelectedColor}
+                setQuantity={setQuantity}
+                quantity={quantity}
+                closeModal={handleCloseModal}
+              />
             </div>
           </div>
         )}
 
         {/* Cart Items */}
-        {cart && cart.length > 0 ? (
-          <>
+        {cartItems?.length > 0 ? (
+          <div className="overflow-x-auto">
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-hidden border border-gray-200 rounded-2xl shadow-md">
-              <table className="min-w-full border-collapse">
-                <thead className="bg-gray-100">
-                  <tr className="text-left text-gray-700">
-                    <th className="py-4 px-6 font-semibold">Product</th>
-                    <th className="py-4 px-6 font-semibold">Price</th>
-                    <th className="py-4 px-6 font-semibold">Quantity</th>
-                    <th className="py-4 px-6 font-semibold">Total</th>
-                    <th className="py-4 px-6 text-center font-semibold">Action</th>
+            <table className="hidden md:table min-w-full border border-gray-200 rounded-xl shadow-sm">
+              <thead className="bg-gray-100">
+                <tr className="text-left text-gray-700">
+                  <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Quantity</th>
+                  <th className="py-3 px-4">Total</th>
+                  <th className="py-3 px-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cartItems.map((item, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="py-3 px-4 flex items-center gap-3">
+                      <img
+                        src={item.image || item.product?.image}
+                        alt={item.name || item.product?.name}
+                        className="w-12 h-12 object-cover rounded-md"
+                      />
+                      <span className="font-medium">
+                        {item.name || item.product?.name}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      ${item.price || item.product?.price}
+                    </td>
+                    <td className="py-3 px-4">{item.quantity}</td>
+                    <td className="py-3 px-4 font-semibold">
+                      ${(item.price || item.product?.price) * item.quantity}
+                    </td>
+                    <td className="text-center flex justify-between gap-2">
+                      <span
+                        onClick={() => handleOpenModal(item)}
+                        className="bg-black text-white px-2 py-1 rounded-md cursor-pointer hover:bg-gray-800"
+                      >
+                        <RiEditCircleFill />
+                      </span>
+                      <span
+                        onClick={() => handleDelete(item)}
+                        className="bg-black text-white px-2 py-1 rounded-md cursor-pointer hover:bg-gray-800"
+                      >
+                        <RiDeleteBin3Fill />
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {cart.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="border-t hover:bg-gray-50 transition duration-300"
-                    >
-                      <td className="py-4 px-6 flex items-center gap-4">
-                        <img
-                          src={item?.image}
-                          alt={item?.name}
-                          className="w-14 h-14 object-cover rounded-lg shadow-sm"
-                        />
-                        <span className="font-medium text-gray-800">{item?.name}</span>
-                      </td>
-                      <td className="py-4 px-6 text-gray-700">${item?.price}</td>
-                      <td className="py-4 px-6 text-gray-700">{item?.quantity}</td>
-                      <td className="py-4 px-6 font-semibold text-gray-800">
-                        ${(item?.price * item?.quantity).toFixed(2)}
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex justify-center gap-3">
-                          <span
-                            onClick={() => handleEditClick(item)}
-                            className="bg-black text-white p-2 rounded-md hover:bg-gray-800 transition"
-                            title="Edit"
-                          >
-                            <RiEditCircleFill className="cursor-pointer" />
-                          </span>
+                ))}
+              </tbody>
+            </table>
 
-                          <span
-                            onClick={() => HandleDeleteCart(item.id, item.size, item.color)}
-                            className="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition"
-                            title="Delete"
-                          >
-                            <RiDeleteBin3Fill className="cursor-pointer" />
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-5">
-              {cart.map((item, index) => (
+            {/* Mobile */}
+            <div className="space-y-4 md:hidden">
+              {cartItems.map((item, idx) => (
                 <div
-                  key={index}
-                  className="border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition"
+                  key={idx}
+                  className="border border-gray-200 rounded-lg p-4 shadow-sm"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
+                      src={item.image || item.product?.image}
+                      alt={item.name || item.product?.name}
+                      className="w-16 h-16 object-cover rounded-md"
                     />
                     <div>
-                      <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <p className="text-gray-600">${item.price}</p>
+                      <h3 className="font-semibold text-lg">
+                        {item.name || item.product?.name}
+                      </h3>
+                      <p className="text-gray-600">
+                        ${item.price || item.product?.price}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center mt-3 text-sm text-gray-700">
-                    <span>Qty: {item.quantity}</span>
+                  <div className="flex justify-between items-center mt-2 text-sm">
+                    <span>Quantity: {item.quantity}</span>
                     <span className="font-semibold">
-                      Total: ${(item.price * item.quantity).toFixed(2)}
+                      Total: $
+                      {(item.price || item.product?.price) * item.quantity}
                     </span>
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-2">
                     <button
-                      onClick={() => handleEditClick(item)}
-                      className="flex-1 bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+                      onClick={() => handleOpenModal(item)}
+                      className="flex-1 bg-black text-white py-2 rounded-md"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => HandleDeleteCart(item.id, item.size, item.color)}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition"
+                      onClick={() => handleDelete(item)}
+                      className="flex-1 bg-red-500 text-white py-2 rounded-md"
                     >
                       Remove
                     </button>
@@ -195,36 +266,43 @@ const Cart = () => {
             </div>
 
             {/* Summary */}
-            <div className="flex justify-end mt-10">
-              <div className="bg-gray-100 p-6 rounded-2xl shadow-md w-full sm:w-2/3 md:w-1/3">
-                <div className="flex justify-between mb-3 text-gray-700">
+            <div className="flex justify-end mt-6">
+              <div className="bg-gray-100 p-5 rounded-lg w-full sm:w-1/2 md:w-1/3 shadow-sm">
+                <div className="flex justify-between mb-2 text-gray-700">
                   <span>Items in Cart:</span>
-                  <span className="font-semibold">{cartCount}</span>
+                  <span>{cartCount}</span>
                 </div>
-                <div className="flex justify-between text-xl font-bold text-gray-900">
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
                   <span>
-                    $
-                    {cart
-                      .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                    {cartItems
+                      .reduce(
+                        (sum, item) =>
+                          sum +
+                          (item.price || item.product?.price) * item.quantity,
+                        0
+                      )
                       .toFixed(2)}
                   </span>
                 </div>
-                <button className="mt-6 w-full bg-black text-white py-3 rounded-md font-semibold hover:bg-gray-800 transition">
-                  Proceed to Checkout
+                <button
+                  onClick={HandleInitializePayment}
+                  className="mt-5 w-full bg-black text-white py-3 rounded-md font-semibold hover:bg-gray-800"
+                >
+                  {isLoading ? "Processing..." : "Checkout"}
                 </button>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center mt-20 text-gray-600">
-            <p className="text-xl mb-6">Your cart is currently empty 🛒</p>
-            <a
-              href="/"
-              className="bg-black text-white px-6 py-3 rounded-md font-medium hover:bg-gray-800 transition"
+            <p className="text-xl mb-4">Your cart is currently empty 🛒</p>
+            <Link
+              to="/"
+              className="bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800"
             >
               Continue Shopping
-            </a>
+            </Link>
           </div>
         )}
       </div>

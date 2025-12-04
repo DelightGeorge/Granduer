@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from "react";
 import { ProductContext } from "../Context/ProductContext";
-import CreateProduct from "../pages/CreateProduct";
+import CreateProduct from "./CreateProduct";
 import Layout from "../Shared/Layout";
 import {
   FaPlusCircle,
@@ -12,8 +12,14 @@ import {
 } from "react-icons/fa";
 
 const Dashboard = () => {
-  const { filteredProducts, HandleGetProducts, HandleAddTCart, cartCount } =
-    useContext(ProductContext);
+  const {
+    filteredProducts = [],
+    HandleGetProducts,
+    HandleAddTCart,
+    cartCount,
+  } = useContext(ProductContext);
+
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -27,12 +33,18 @@ const Dashboard = () => {
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    HandleGetProducts();
+    const fetchProducts = async () => {
+      try {
+        await HandleGetProducts();
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    fetchProducts();
   }, []);
 
-  const recentProducts = filteredProducts.slice(0, 5);
+  const recentProducts = (filteredProducts || []).slice(0, 5);
 
-  // Open Edit modal
   const openEditModal = (prod) => {
     setSelectedProduct(prod);
     setSelectedSize(prod?.defaultSize || prod?.sizes?.[0] || "");
@@ -85,7 +97,7 @@ const Dashboard = () => {
               {
                 title: "Total Products",
                 icon: FaBox,
-                value: filteredProducts.length,
+                value: filteredProducts?.length || 0,
               },
               { title: "Orders", icon: FaShoppingCart, value: 89 },
               { title: "Users", icon: FaUsers, value: 342 },
@@ -130,38 +142,44 @@ const Dashboard = () => {
           {/* Recent Products Table */}
           <div className="bg-white shadow-md rounded-xl p-6">
             <h2 className="text-2xl font-bold mb-4">Recent Products</h2>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr>
-                  <th className="border-b p-2">Name</th>
-                  <th className="border-b p-2">Price</th>
-                  <th className="border-b p-2">Category</th>
-                  <th className="border-b p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentProducts.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-gray-100">
-                    <td className="p-2">{prod.name}</td>
-                    <td className="p-2">${prod.price}</td>
-                    <td className="p-2">{prod.subcategory}</td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => openEditModal(prod)}
-                        className="bg-primary text-white px-3 py-1 rounded"
-                      >
-                        View / Edit
-                      </button>
-                    </td>
+
+            {loadingProducts ? (
+              <p className="text-center text-gray-500">Loading products...</p>
+            ) : recentProducts.length === 0 ? (
+              <p className="text-center text-gray-500">No products found.</p>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border-b p-2">Name</th>
+                    <th className="border-b p-2">Price</th>
+                    <th className="border-b p-2">Category</th>
+                    <th className="border-b p-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentProducts.map((prod) => (
+                    <tr key={prod.id} className="hover:bg-gray-100">
+                      <td className="p-2">{prod.name}</td>
+                      <td className="p-2">${prod.price}</td>
+                      <td className="p-2">{prod.subcategory}</td>
+                      <td className="p-2">
+                        <button
+                          onClick={() => openEditModal(prod)}
+                          className="bg-primary text-white px-3 py-1 rounded"
+                        >
+                          View / Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </main>
 
         {/* ---------------- MODALS ---------------- */}
-
         {/* Create Product Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-auto">
@@ -187,25 +205,18 @@ const Dashboard = () => {
               >
                 ✕
               </button>
-
+              {/* Product Details */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Product Image */}
                 <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
                   <img
-                    src={selectedProduct.image}
+                    src={selectedProduct.image || "/placeholder.png"}
                     alt={selectedProduct.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
-
-                {/* Product Details */}
                 <div className="flex flex-col">
-                  <h2 className="text-2xl font-bold mb-4">
-                    {selectedProduct.name}
-                  </h2>
-                  <p className="text-gray-600 mb-3">
-                    {selectedProduct.description}
-                  </p>
+                  <h2 className="text-2xl font-bold mb-4">{selectedProduct.name}</h2>
+                  <p className="text-gray-600 mb-3">{selectedProduct.description}</p>
                   <p className="text-xl font-semibold mb-2">
                     ${selectedProduct.price}{" "}
                     {selectedProduct.discount > 0 && (
@@ -214,8 +225,6 @@ const Dashboard = () => {
                       </span>
                     )}
                   </p>
-
-                  {/* Sizes */}
                   {selectedProduct.sizes?.length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-1">Select Size:</h3>
@@ -236,8 +245,6 @@ const Dashboard = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Colors */}
                   {selectedProduct.colors?.length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-1">Select Color:</h3>
@@ -257,8 +264,6 @@ const Dashboard = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Quantity */}
                   <div className="mb-4 flex items-center gap-3">
                     <h3 className="font-semibold">Quantity:</h3>
                     <div className="flex items-center border rounded-md">
@@ -273,9 +278,7 @@ const Dashboard = () => {
                         min="1"
                         value={quantity}
                         onChange={(e) =>
-                          setQuantity(
-                            Math.max(parseInt(e.target.value) || 1, 1)
-                          )
+                          setQuantity(Math.max(parseInt(e.target.value) || 1, 1))
                         }
                         className="w-16 text-center outline-none px-2 py-1"
                       />
@@ -287,20 +290,13 @@ const Dashboard = () => {
                       </button>
                     </div>
                   </div>
-
-                  {/* Add to Cart */}
                   <button
                     onClick={() =>
-                      HandleAddTCart(
-                        selectedProduct,
-                        quantity,
-                        selectedSize,
-                        selectedColor
-                      )
+                      HandleAddTCart(selectedProduct, quantity, selectedSize, selectedColor)
                     }
                     className="mt-4 w-full py-3 rounded-md text-white bg-black hover:bg-gray-800"
                   >
-                    Add to Cart ({cartCount})
+                    Add to Cart ({cartCount || 0})
                   </button>
                 </div>
               </div>
@@ -318,39 +314,41 @@ const Dashboard = () => {
               >
                 ✕
               </button>
-
               <h2 className="text-2xl font-bold mb-4">All Products</h2>
-
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border-b p-2">Name</th>
-                    <th className="border-b p-2">Price</th>
-                    <th className="border-b p-2">Category</th>
-                    <th className="border-b p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProducts.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-gray-100">
-                      <td className="p-2">{prod.name}</td>
-                      <td className="p-2">${prod.price}</td>
-                      <td className="p-2">{prod.subcategory}</td>
-                      <td className="p-2">
-                        <button
-                          onClick={() => {
-                            setShowAllProductsModal(false); // close the All Products modal
-                            openEditModal(prod); // then open the Edit modal
-                          }}
-                          className="bg-primary text-white px-3 py-1 rounded"
-                        >
-                          View / Edit
-                        </button>
-                      </td>
+              {filteredProducts.length === 0 ? (
+                <p className="text-center text-gray-500">No products available.</p>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border-b p-2">Name</th>
+                      <th className="border-b p-2">Price</th>
+                      <th className="border-b p-2">Category</th>
+                      <th className="border-b p-2">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((prod) => (
+                      <tr key={prod.id} className="hover:bg-gray-100">
+                        <td className="p-2">{prod.name}</td>
+                        <td className="p-2">${prod.price}</td>
+                        <td className="p-2">{prod.subcategory}</td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => {
+                              setShowAllProductsModal(false);
+                              openEditModal(prod);
+                            }}
+                            className="bg-primary text-white px-3 py-1 rounded"
+                          >
+                            View / Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}
