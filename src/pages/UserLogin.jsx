@@ -13,8 +13,9 @@ import {
 
 import { ProductContext } from "../Context/ProductContext";
 import { toast } from "react-toastify";
-import { loginUser, regUser } from "../services/userService";
+
 import Layout from "../Shared/Layout";
+import { loginUser, registerUser } from "../../../../ecomBackend/controllers/userController";
 
 const UserLoginPage = () => {
   const {
@@ -202,7 +203,7 @@ const UserLoginPage = () => {
           formData.append("image", inputs.image);
         }
 
-        const res = await regUser(formData);
+        const res = await registerUser(formData);
 
         if (res.ok) {
           toast.success(res.data?.message || "Registration successful!");
