@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { baseUrl } from "../App";
+import { baseUrl, productsUrl, cartsUrl } from "../App";
 import { jwtDecode } from "jwt-decode";
 
 const ProductContext = createContext();
@@ -28,12 +28,10 @@ const ProductProvider = ({ children }) => {
   const [token, setTokenState] = useState(() => localStorage.getItem("authToken") || "");
   const [localCartMerged, setLocalCartMerged] = useState(() => getLocalData("localCartMerged", false));
 
-  // Fix 10/11: derive isAuthentified from user AND token together
   useEffect(() => {
     setIsAuthentified(!!(user?.id && token));
   }, [user, token]);
 
-  // Fix 12: token expiry check also clears user from localStorage
   useEffect(() => {
     if (!token) return;
     try {
@@ -69,11 +67,13 @@ const ProductProvider = ({ children }) => {
 
   const HandleGetProducts = async () => {
     try {
-      const res = await fetch(`${baseUrl}getAllProduct`);
-      const data = await res.json();
-      if (res.ok && data.data) {
-        setProductData(data.data);
+      const res = await fetch(`${productsUrl}getAllProduct`);
+      if (!res.ok) {
+        console.error(`Server error: ${res.status} ${res.statusText}`);
+        return;
       }
+      const data = await res.json();
+      if (data.data) setProductData(data.data);
     } catch (err) {
       console.error("Failed to fetch products:", err);
     }
@@ -86,7 +86,7 @@ const ProductProvider = ({ children }) => {
   const fetchServerCart = useCallback(async () => {
     if (!user?.id || !token) return [];
     try {
-      const res = await fetch(`${baseUrl}getcart`, {
+      const res = await fetch(`${cartsUrl}getcart`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -128,10 +128,9 @@ const ProductProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      // Fix 14: read from localStorage snapshot, not stale closure
       await Promise.all(
         localCart.map((item) =>
-          fetch(`${baseUrl}addcart`, {
+          fetch(`${cartsUrl}addcart`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -186,7 +185,7 @@ const ProductProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`${baseUrl}addcart`, {
+      const res = await fetch(`${cartsUrl}addcart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,7 +230,7 @@ const ProductProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`${baseUrl}updatecart`, {
+      const res = await fetch(`${cartsUrl}updatecart`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -279,7 +278,7 @@ const ProductProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`${baseUrl}deletecart`, {
+      const res = await fetch(`${cartsUrl}deletecart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -297,6 +296,7 @@ const ProductProvider = ({ children }) => {
           color: pc.selectedcolor,
         }));
         setCartItems(updatedCart);
+        localStorage.setItem("cartItems", JSON.stringify(updatedCart));
         toast.success("Item removed!");
         return { success: true, data: updatedCart };
       }
@@ -329,7 +329,6 @@ const ProductProvider = ({ children }) => {
   return (
     <ProductContext.Provider
       value={{
-        // Fix 13: expose productData (was filteredProducts which never existed)
         productData,
         filteredProducts: productData,
         cartItems,

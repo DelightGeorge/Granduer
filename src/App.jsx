@@ -4,6 +4,9 @@ import { ToastContainer } from "react-toastify";
 import { GridLoader } from "react-spinners";
 
 export const baseUrl = "https://ecombackend-6znk.onrender.com/";
+export const productsUrl = `${baseUrl}products/`;
+export const cartsUrl = `${baseUrl}carts/`;
+export const usersUrl = `${baseUrl}users/`;
 
 function App() {
   const [loading, setLoading] = useState(true);
