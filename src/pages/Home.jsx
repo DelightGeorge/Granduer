@@ -1,150 +1,117 @@
-import LinesEllipsis from "react-lines-ellipsis";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/pagination";
-import { Link, NavLink } from "react-router-dom";
-import { FaArrowCircleRight, FaArrowRight, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaShoppingCart, FaHeart } from "react-icons/fa";
+import LinesEllipsis from "react-lines-ellipsis";
 import { ProductContext } from "../Context/ProductContext";
 import Layout from "../Shared/Layout";
 
 const Home = () => {
-  const { HandleGetProducts, productData, HandleAddTCart } = useContext(ProductContext);
-  const [bestSeller, setBestSeller] = useState([]);
-  const [fewItems, setFewItems] = useState([]);
-  const [fewDisplay, setFewDisplay] = useState(true);
+  const { productData, HandleGetProducts, HandleAddTCart } = useContext(ProductContext);
+  const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
-    HandleGetProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { HandleGetProducts(); }, []);
 
-  useEffect(() => {
-    if (productData && productData.length > 0) {
-      setFewItems(productData.slice(0, 3));
-      const found = productData.filter((item) => item.bestSeller === true);
-      setBestSeller(found.length > 0 ? found : productData);
-    }
-  }, [productData]);
+  const bestSellers = productData?.filter(p => p.bestSeller) || [];
+  const displayed = showAll
+    ? (bestSellers.length > 0 ? bestSellers : productData)
+    : (productData || []).slice(0, 3);
 
   return (
     <Layout>
-      <div className="bg-primary flex flex-col justify-center min-h-screen mb-12">
-        <div className="flex justify-center">
-          <NavLink className="relative rounded-3xl text-sm overflow-hidden p-4 mt-4">
-            <div className="absolute w-full h-full top-0 left-0 rounded-3xl bg-gradient-to-l from-black to-transparent z-20"></div>
-            <div className="p-2 border-t-[1px] border-b-[1px] border-l-[1px] text-white rounded-3xl">
-              <p className="relative z-30">New collection 2025</p>
-            </div>
-          </NavLink>
+      {/* Hero */}
+      <section className="bg-[#0f0f0f] min-h-[92vh] flex flex-col items-center justify-center px-6 py-20 overflow-hidden">
+        <span className="border border-white/20 text-white/60 text-xs tracking-widest uppercase px-4 py-1.5 rounded-full mb-8">
+          New collection 2025
+        </span>
+        <h1 className="text-white text-4xl md:text-6xl font-medium text-center max-w-3xl leading-tight mb-5">
+          Where style meets <span className="text-[#c9b99a]">expression</span> and fashion thrives
+        </h1>
+        <p className="text-white/50 text-base text-center max-w-md leading-relaxed mb-10">
+          Step into a fashion haven where the latest trends meet your unique style. Redefine your wardrobe with Grandeur.
+        </p>
+        <div className="flex gap-3 flex-wrap justify-center">
+          <Link to="/products" className="bg-white text-[#0f0f0f] px-7 py-3 rounded-full text-sm font-medium hover:opacity-85 transition">
+            Shop now
+          </Link>
+          <Link to="/products" className="border border-white/25 text-white/70 px-7 py-3 rounded-full text-sm hover:border-white/50 transition">
+            View all
+          </Link>
         </div>
 
-        {/* Hero text */}
-        <div className="flex items-center justify-center">
-          <p className="lg:text-5xl md:text-2xl text-xl font-bold text-white text-center lg:px-[10rem] md:px-[5rem] px-[2rem]">
-            Where style meets expression, trends inspire, and fashion thrives.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-center text-white mt-7 text-center lg:px-[10rem] md:px-[5rem] px-[2rem]">
-          <p>
-            Step into a fashion haven where the latest trends meet your unique
-            style aspirations. Redefine your wardrobe with Desober today!
-          </p>
-        </div>
-
-        {/* Button */}
-        <div className="flex items-center justify-center mt-8">
-          <div className="rounded-3xl bg-white p-2 text-primary w-40 flex items-center justify-center gap-2">
-            <Link>New collection</Link>
-            <FaArrowCircleRight className="font-bold text-xl" />
+        {/* Scrolling strip */}
+        <div className="w-full overflow-hidden mt-14">
+          <div className="flex gap-3 animate-marquee w-max">
+            {[...(productData || []), ...(productData || [])].map((p, i) => (
+              <Link
+                key={i}
+                to={`/product/${p.id}`}
+                className="w-40 h-52 rounded-xl overflow-hidden flex-shrink-0 bg-[#1e1e1e] flex items-end"
+              >
+                {p.image
+                  ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  : <span className="text-white/40 text-xs p-3">{p.name}</span>}
+              </Link>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Product Slider */}
-        <div className="w-full md:px-4 px-28 pb-16 flex flex-col justify-center items-center">
-          <Swiper
-            autoplay={{ delay: 1000, disableOnInteraction: false }}
-            spaceBetween={20}
-            loop={true}
-            speed={1000}
-            slidesPerGroup={1}
-            modules={[Autoplay]}
-            breakpoints={{
-              640: { slidesPerView: 1 },
-              768: { slidesPerView: 3 },
-              1024: { slidesPerView: 5 },
-            }}
-            className="w-full h-72 lg:h-72 xl:h-96 flex flex-col justify-center items-center"
-          >
-            {productData?.map((product) => (
-              <SwiperSlide
-                key={product.id}
-                className="flex justify-center items-center md:w-full w-1/2 mt-10 rounded-t-[50%] overflow-hidden"
-              >
-                <Link to={`/product/${product.id}`} className="w-full h-full">
-                  <img src={product.image} alt="Fashion" className="object-cover w-full h-full" />
-                </Link>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+      {/* Stats */}
+      <div className="flex justify-center border-y border-gray-100 bg-gray-50">
+        {[["2,400+", "Products"], ["180+", "Brands"], ["50k+", "Customers"], ["4.9", "Avg. rating"]].map(([n, l]) => (
+          <div key={l} className="px-8 py-6 text-center border-r border-gray-100 last:border-r-0">
+            <div className="text-2xl font-medium text-gray-900">{n}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Best Sellers */}
+      <section className="bg-white px-6 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-medium text-gray-900">Best sellers</h2>
+          <p className="text-sm text-gray-500 mt-1">Our most-loved pieces, season after season</p>
         </div>
-
-        {/* Best Seller Section */}
-        <div className="bg-white lg:pt-12 pt-2">
-          <p className="text-center text-primary text-2xl font-semibold w-full mt-8">Best Seller</p>
-          <p className="text-center text-primary w-full mt-2 text-lg">
-            Stay cozy and stylish with our exclusive collection of best-selling Hoodies
-          </p>
-
-          <div className="px-4 md:px-10 lg:px-20 grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-x-8 md:gap-y-16 gap-16 justify-center items-stretch lg:mt-6 mt-8">
-            {(fewDisplay ? fewItems : bestSeller)?.map((item) => (
-              <div
-                key={item.id}
-                className="hover:shadow-2xl transition ease-in-out duration-500 rounded-md overflow-hidden"
-              >
-                <div className="w-full h-[26rem] overflow-hidden">
-                  <Link to={`/product/${item.id}`} className="w-full h-full">
-                    <img src={item.image} alt="Fashion" className="object-cover w-full h-full" />
-                  </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          {displayed.map(item => (
+            <div key={item.id} className="border border-gray-100 rounded-2xl overflow-hidden hover:border-gray-300 transition">
+              <Link to={`/product/${item.id}`} className="block w-full h-64 bg-gray-50 overflow-hidden">
+                {item.image
+                  ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center"><div className="w-12 h-12 rounded-full bg-gray-200" /></div>}
+              </Link>
+              <div className="p-4">
+                <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                <div className="text-sm text-gray-400 truncate mb-3">
+                  <LinesEllipsis text={item.description} maxLine="1" ellipsis="..." trimRight />
                 </div>
-                <div className="p-2">
-                  <p className="text-black font-bold mt-2">{item.name}</p>
-                  <div className="w-full">
-                    <LinesEllipsis text={item.description} maxLine="1" ellipsis="..." trimRight />
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="p-2 bg-primary text-white rounded-md">${item.price}</span>
-                    <div className="flex justify-between items-center gap-4">
-                      <span className="rounded-full p-2 bg-white border-[1px] border-primary flex justify-center items-center">
-                        <FaHeart className="h-6 w-6" />
-                      </span>
-                      <span
-                        onClick={() =>
-                          HandleAddTCart(item, 1, item?.defaultSize, item?.defaultColor)
-                        }
-                        className="rounded-full p-2 text-white bg-primary flex justify-center items-center"
-                      >
-                        <FaShoppingCart className="h-6 w-6" />
-                      </span>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">${item.price}</span>
+                  <div className="flex gap-2">
+                    <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-400 transition">
+                      <FaHeart size={13} />
+                    </button>
+                    <button
+                      onClick={() => HandleAddTCart(item, 1, item.defaultSize, item.defaultColor)}
+                      className="w-8 h-8 rounded-full bg-[#0f0f0f] text-white flex items-center justify-center hover:opacity-75 transition"
+                    >
+                      <FaShoppingCart size={13} />
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center mt-8">
-            <span
-              onClick={() => setFewDisplay(!fewDisplay)}
-              className="rounded-md bg-white text-black border-2 border-primary cursor-pointer p-2 flex justify-between items-center gap-2"
-            >
-              {fewDisplay ? "See More" : "See Less"} <FaArrowRight />
-            </span>
-          </div>
+            </div>
+          ))}
         </div>
-      </div>
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="border border-gray-300 text-gray-700 px-7 py-2.5 rounded-full text-sm hover:bg-gray-50 transition"
+          >
+            {showAll ? "See less" : "See more"}
+          </button>
+        </div>
+      </section>
     </Layout>
   );
 };
