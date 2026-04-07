@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { baseUrl } from "../App";
 import { jwtDecode } from "jwt-decode";
@@ -17,47 +17,62 @@ const ProductProvider = ({ children }) => {
       const value = localStorage.getItem(key);
       if (!value || value === "undefined") return fallback;
       return JSON.parse(value);
-    } catch (err) {
-      console.error("Error reading localStorage:", err);
+    } catch {
       return fallback;
     }
   };
 
-  const [cartItems, setCartItems] = useState(getLocalData("cartItems", []));
-  const [favoriteItems, setFavoriteItems] = useState(
-    getLocalData("favouriteCart", [])
-  );
-  const [user, setUser] = useState(getLocalData("user", {}));
-  const [token, setToken] = useState(localStorage.getItem("authToken") || "");
-  const [localCartMerged, setLocalCartMerged] = useState(
-    getLocalData("localCartMerged", false)
-  );
+  const [cartItems, setCartItems] = useState(() => getLocalData("cartItems", []));
+  const [favoriteItems, setFavoriteItems] = useState(() => getLocalData("favouriteCart", []));
+  const [user, setUser] = useState(() => getLocalData("user", null));
+  const [token, setTokenState] = useState(() => localStorage.getItem("authToken") || "");
+  const [localCartMerged, setLocalCartMerged] = useState(() => getLocalData("localCartMerged", false));
 
-  useEffect(() => setIsAuthentified(!!user?.id), [user]);
+  // Fix 10/11: derive isAuthentified from user AND token together
+  useEffect(() => {
+    setIsAuthentified(!!(user?.id && token));
+  }, [user, token]);
 
-  useEffect(
-    () =>
-      setCartCount(
-        cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0)
-      ),
-    [cartItems]
-  );
-  useEffect(
-    () =>
-      setFavouriteCount(
-        favoriteItems.reduce((acc, item) => acc + (item.quantity || 0), 0)
-      ),
-    [favoriteItems]
-  );
+  // Fix 12: token expiry check also clears user from localStorage
+  useEffect(() => {
+    if (!token) return;
+    try {
+      const decoded = jwtDecode(token);
+      if (decoded.exp * 1000 < Date.now()) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("localCartMerged");
+        setTokenState("");
+        setUser(null);
+        setIsAuthentified(false);
+        toast.info("Your session has expired. Please log in again.");
+      }
+    } catch {
+      localStorage.removeItem("authToken");
+      setTokenState("");
+    }
+  }, [token]);
 
-  // Fetch all products
+  useEffect(() => {
+    setCartCount(cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0));
+  }, [cartItems]);
+
+  useEffect(() => {
+    setFavouriteCount(favoriteItems.reduce((acc, item) => acc + (item.quantity || 0), 0));
+  }, [favoriteItems]);
+
+  const setToken = (t) => {
+    if (t) localStorage.setItem("authToken", t);
+    else localStorage.removeItem("authToken");
+    setTokenState(t || "");
+  };
+
   const HandleGetProducts = async () => {
     try {
       const res = await fetch(`${baseUrl}getAllProduct`);
       const data = await res.json();
       if (res.ok && data.data) {
         setProductData(data.data);
-        localStorage.setItem("productData", JSON.stringify(data.data));
       }
     } catch (err) {
       console.error("Failed to fetch products:", err);
@@ -68,9 +83,8 @@ const ProductProvider = ({ children }) => {
     HandleGetProducts();
   }, []);
 
-  // Fetch cart from server
-  const fetchServerCart = async () => {
-    if (!isAuthentified || !user?.id || !token) return [];
+  const fetchServerCart = useCallback(async () => {
+    if (!user?.id || !token) return [];
     try {
       const res = await fetch(`${baseUrl}getcart`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -95,16 +109,17 @@ const ProductProvider = ({ children }) => {
       console.error("fetchServerCart error:", err);
       return [];
     }
-  };
+  }, [user, token]);
 
-  // Merge local cart with server cart
-  const mergeLocalCartToServer = async () => {
-    if (!isAuthentified || localCartMerged) {
+  const mergeLocalCartToServer = useCallback(async () => {
+    if (!user?.id || !token) return;
+    if (localCartMerged) {
       await fetchServerCart();
       return;
     }
-    if (!cartItems?.length) {
-      // No local cart, just fetch server cart
+
+    const localCart = getLocalData("cartItems", []);
+    if (!localCart.length) {
       await fetchServerCart();
       setLocalCartMerged(true);
       localStorage.setItem("localCartMerged", "true");
@@ -113,49 +128,46 @@ const ProductProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const addPromises = cartItems.map((item) =>
-        fetch(`${baseUrl}addcart`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            productid: item.id,
-            quantity: item.quantity,
-            size: item.size,
-            color: item.color,
-          }),
-        }).then((r) => r.json())
+      // Fix 14: read from localStorage snapshot, not stale closure
+      await Promise.all(
+        localCart.map((item) =>
+          fetch(`${baseUrl}addcart`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              productid: item.id,
+              quantity: item.quantity,
+              size: item.size,
+              color: item.color,
+            }),
+          }).then((r) => r.json())
+        )
       );
-      await Promise.all(addPromises);
       await fetchServerCart();
       setLocalCartMerged(true);
       localStorage.setItem("localCartMerged", "true");
-      toast.success("Merged local cart to your account");
+      toast.success("Your cart has been synced to your account!");
     } catch (err) {
       console.error("mergeLocalCartToServer error:", err);
-      toast.error("Failed to merge local cart");
+      toast.error("Failed to sync your cart");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, token, localCartMerged, fetchServerCart]);
 
   useEffect(() => {
-    const syncCart = async () => {
-      if (isAuthentified && token && user?.id) {
-        await mergeLocalCartToServer();
-      } else {
-        setCartItems(getLocalData("cartItems", []));
-      }
-    };
-    syncCart();
+    if (isAuthentified && token && user?.id) {
+      mergeLocalCartToServer();
+    } else if (!isAuthentified) {
+      setCartItems(getLocalData("cartItems", []));
+    }
   }, [isAuthentified, token, user]);
 
-  // Add to cart
   const HandleAddTCart = async (product, quantity = 1, size, color) => {
     if (!isAuthentified) {
-      // Guest cart
       const exists = cartItems.find(
         (i) => i.id === product.id && i.size === size && i.color === color
       );
@@ -173,7 +185,6 @@ const ProductProvider = ({ children }) => {
       return { success: true, data: updatedCart };
     }
 
-    // Logged-in user
     try {
       const res = await fetch(`${baseUrl}addcart`, {
         method: "POST",
@@ -206,19 +217,16 @@ const ProductProvider = ({ children }) => {
     }
   };
 
-  // Update cart
   const HandleUpdateCart = async (updatedProd) => {
     if (!isAuthentified) {
       const updatedCart = cartItems.map((i) =>
-        i.id === updatedProd.id &&
-        i.size === updatedProd.size &&
-        i.color === updatedProd.color
+        i.id === updatedProd.id && i.size === updatedProd.size && i.color === updatedProd.color
           ? { ...i, ...updatedProd }
           : i
       );
       setCartItems(updatedCart);
       localStorage.setItem("cartItems", JSON.stringify(updatedCart));
-      toast.success("Cart updated successfully!");
+      toast.success("Cart updated!");
       return { success: true, data: updatedCart };
     }
 
@@ -247,24 +255,22 @@ const ProductProvider = ({ children }) => {
         }));
         setCartItems(updatedCart);
         localStorage.setItem("cartItems", JSON.stringify(updatedCart));
-        toast.success(data.message || "Cart updated successfully!");
+        toast.success(data.message || "Cart updated!");
         return { success: true, data: updatedCart };
       }
       toast.error(data.message || "Failed to update cart");
-      return { success: false, message: data.message };
+      return { success: false };
     } catch (err) {
       console.error("HandleUpdateCart error:", err);
       toast.error("Failed to update cart");
-      return { success: false, message: err.message };
+      return { success: false };
     }
   };
 
-  // Delete cart item
   const HandleDeleteCart = async (prod) => {
     if (!isAuthentified) {
       const updatedCart = cartItems.filter(
-        (i) =>
-          !(i.id === prod.id && i.size === prod.size && i.color === prod.color)
+        (i) => !(i.id === prod.id && i.size === prod.size && i.color === prod.color)
       );
       setCartItems(updatedCart);
       localStorage.setItem("cartItems", JSON.stringify(updatedCart));
@@ -291,64 +297,41 @@ const ProductProvider = ({ children }) => {
           color: pc.selectedcolor,
         }));
         setCartItems(updatedCart);
-        setCartCount(updatedCart.reduce((acc, i) => acc + i.quantity, 0));
-        toast.success("Item removed from cart!");
+        toast.success("Item removed!");
         return { success: true, data: updatedCart };
-      } else {
-        toast.error(data.message || "Failed to remove item");
-        return { success: false, message: data.message };
       }
+      toast.error(data.message || "Failed to remove item");
+      return { success: false };
     } catch (err) {
       console.error("Delete cart error:", err);
-      toast.error("Failed to delete cart item");
-      return { success: false, message: err.message };
+      toast.error("Failed to delete item");
+      return { success: false };
     }
   };
 
-  // Favourite cart
   const HandleAddFavouriteCart = (prod) => {
     const exists = favoriteItems.find(
       (i) => i.id === prod.id && i.size === prod.size && i.color === prod.color
     );
     const updatedFav = exists
       ? favoriteItems.filter(
-          (i) =>
-            !(
-              i.id === prod.id &&
-              i.size === prod.size &&
-              i.color === prod.color
-            )
+          (i) => !(i.id === prod.id && i.size === prod.size && i.color === prod.color)
         )
       : [...favoriteItems, prod];
     setFavoriteItems(updatedFav);
     localStorage.setItem("favouriteCart", JSON.stringify(updatedFav));
     toast[exists ? "info" : "success"](
-      exists ? "Removed from favourites" : "Added to favourites"
+      exists ? "Removed from favourites" : "Added to favourites!"
     );
     return updatedFav;
   };
 
-  // Token expiration check
-  useEffect(() => {
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 < Date.now()) {
-          localStorage.removeItem("authToken");
-          setToken("");
-          setUser({});
-          setIsAuthentified(false);
-        }
-      } catch (err) {
-        console.error("Invalid token:", err);
-      }
-    }
-  }, [token]);
-
   return (
     <ProductContext.Provider
       value={{
+        // Fix 13: expose productData (was filteredProducts which never existed)
         productData,
+        filteredProducts: productData,
         cartItems,
         cartCount,
         favoriteItems,
@@ -356,12 +339,12 @@ const ProductProvider = ({ children }) => {
         isAuthentified,
         loading,
         setLoading,
-        setUser,
-        setToken: (t) => {
-          if (t) localStorage.setItem("authToken", t);
-          else localStorage.removeItem("authToken");
-          setToken(t || "");
+        setUser: (u) => {
+          if (u) localStorage.setItem("user", JSON.stringify(u));
+          else localStorage.removeItem("user");
+          setUser(u);
         },
+        setToken,
         token,
         setCartItems,
         HandleGetProducts,

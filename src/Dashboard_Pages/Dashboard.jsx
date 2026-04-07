@@ -2,35 +2,22 @@ import { useState, useContext, useEffect } from "react";
 import { ProductContext } from "../Context/ProductContext";
 import CreateProduct from "./CreateProduct";
 import Layout from "../Shared/Layout";
+import { useNavigate } from "react-router-dom";
 import {
-  FaPlusCircle,
-  FaList,
-  FaBox,
-  FaShoppingCart,
-  FaUsers,
-  FaTachometerAlt,
+  FaPlusCircle, FaList, FaBox, FaShoppingCart,
+  FaUsers, FaTachometerAlt, FaTrash, FaEdit,
 } from "react-icons/fa";
 
-const Dashboard = () => {
-  const {
-    filteredProducts = [],
-    HandleGetProducts,
-    HandleAddTCart,
-    cartCount,
-  } = useContext(ProductContext);
+const AdminDashboard = () => {
+  const { filteredProducts = [], HandleGetProducts } = useContext(ProductContext);
+  const navigate = useNavigate();
 
   const [loadingProducts, setLoadingProducts] = useState(true);
-
-  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAllProductsModal, setShowAllProductsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // Selected product for edit
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [activeNav, setActiveNav] = useState("Dashboard");
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -47,73 +34,62 @@ const Dashboard = () => {
 
   const openEditModal = (prod) => {
     setSelectedProduct(prod);
-    setSelectedSize(prod?.defaultSize || prod?.sizes?.[0] || "");
-    setSelectedColor(prod?.defaultColor || prod?.colors?.[0] || "");
-    setQuantity(1);
     setShowEditModal(true);
+    setShowAllProductsModal(false);
   };
+
+  const navItems = [
+    { label: "Dashboard", icon: FaTachometerAlt },
+    { label: "Manage Products", icon: FaBox },
+    { label: "Users", icon: FaUsers },
+    { label: "Orders", icon: FaShoppingCart },
+  ];
 
   return (
     <Layout>
       <div className="md:flex min-h-screen bg-gray-100">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-primary text-white flex flex-col p-4 md:p-6 text-center md:text-left">
-          <h2 className="text-2xl font-bold mb-6">Granduer Admin</h2>
-          <nav className="flex flex-col gap-3 w-full">
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaTachometerAlt /> Dashboard
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaBox /> Manage Products
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaUsers /> Users
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 hover:text-black hover:bg-white p-3 rounded-md transition w-full justify-center md:justify-start"
-            >
-              <FaShoppingCart /> Orders
-            </a>
+        <aside className="w-full md:w-64 bg-primary text-white flex flex-col p-4 md:p-6">
+          <h2 className="text-2xl font-bold mb-8 text-center md:text-left">Ikeyá Admin</h2>
+          <nav className="flex flex-col gap-2 w-full">
+            {/* Fix 9: use state-based active nav instead of dead href="#" */}
+            {navItems.map(({ label, icon: Icon }) => (
+              <button
+                key={label}
+                onClick={() => setActiveNav(label)}
+                className={`flex items-center gap-3 p-3 rounded-md transition w-full justify-center md:justify-start ${
+                  activeNav === label
+                    ? "bg-white text-black font-semibold"
+                    : "hover:bg-white hover:text-black"
+                }`}
+              >
+                <Icon /> {label}
+              </button>
+            ))}
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-6 md:p-8">
           <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
           {/* Stats Cards */}
-          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             {[
-              {
-                title: "Total Products",
-                icon: FaBox,
-                value: filteredProducts?.length || 0,
-              },
+              { title: "Total Products", icon: FaBox, value: filteredProducts?.length || 0 },
               { title: "Orders", icon: FaShoppingCart, value: 89 },
               { title: "Users", icon: FaUsers, value: 342 },
-              { title: "Revenue", icon: FaTachometerAlt, value: 45200 },
+              // Fix 7: use ₦ not $
+              { title: "Revenue", icon: FaTachometerAlt, value: "₦45,200" },
             ].map((card, index) => {
               const Icon = card.icon;
               return (
                 <div key={index} className="bg-white shadow-md rounded-xl p-6">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Icon className="text-primary text-3xl" />
-                      <h3 className="font-semibold">{card.title}</h3>
+                      <h3 className="font-semibold text-sm">{card.title}</h3>
                     </div>
-                    <p className="text-xl font-bold">
-                      {card.title === "Revenue" ? `$${card.value}` : card.value}
-                    </p>
+                    <p className="text-xl font-bold">{card.value}</p>
                   </div>
                 </div>
               );
@@ -129,7 +105,6 @@ const Dashboard = () => {
               <FaPlusCircle className="text-primary text-4xl mb-3" />
               <h3 className="text-xl font-semibold">Add Product</h3>
             </button>
-
             <button
               onClick={() => setShowAllProductsModal(true)}
               className="bg-white shadow-md rounded-xl p-6 flex flex-col items-center hover:shadow-xl transition"
@@ -142,7 +117,6 @@ const Dashboard = () => {
           {/* Recent Products Table */}
           <div className="bg-white shadow-md rounded-xl p-6">
             <h2 className="text-2xl font-bold mb-4">Recent Products</h2>
-
             {loadingProducts ? (
               <p className="text-center text-gray-500">Loading products...</p>
             ) : recentProducts.length === 0 ? (
@@ -150,25 +124,27 @@ const Dashboard = () => {
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
+                  <tr className="text-slate-500 text-sm">
                     <th className="border-b p-2">Name</th>
-                    <th className="border-b p-2">Price</th>
+                    {/* Fix 7: ₦ currency */}
+                    <th className="border-b p-2">Price (₦)</th>
                     <th className="border-b p-2">Category</th>
                     <th className="border-b p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentProducts.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-gray-100">
+                    <tr key={prod.id} className="hover:bg-gray-50 border-b">
                       <td className="p-2">{prod.name}</td>
-                      <td className="p-2">${prod.price}</td>
+                      <td className="p-2">₦{(prod.price / 100).toLocaleString()}</td>
                       <td className="p-2">{prod.subcategory}</td>
                       <td className="p-2">
+                        {/* Fix 8: no "Add to Cart" in admin — View/Edit only */}
                         <button
                           onClick={() => openEditModal(prod)}
-                          className="bg-primary text-white px-3 py-1 rounded"
+                          className="bg-primary text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
                         >
-                          View / Edit
+                          <FaEdit size={12} /> View / Edit
                         </button>
                       </td>
                     </tr>
@@ -179,125 +155,78 @@ const Dashboard = () => {
           </div>
         </main>
 
-        {/* ---------------- MODALS ---------------- */}
         {/* Create Product Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 overflow-auto">
             <div className="bg-white w-full max-w-5xl rounded-xl p-6 relative">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="absolute top-3 right-3 text-gray-600 font-bold"
+                className="absolute top-3 right-3 text-gray-600 font-bold text-xl hover:text-red-500"
               >
-                X
+                ✕
               </button>
-              <CreateProduct />
+              <CreateProduct closeModal={() => {
+                setShowCreateModal(false);
+                HandleGetProducts(); // refresh product list after creation
+              }} />
             </div>
           </div>
         )}
 
-        {/* Edit Product Modal */}
+        {/* Edit Product Modal — admin view only, no cart action */}
         {showEditModal && selectedProduct && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 overflow-auto pt-10">
-            <div className="bg-white w-full max-w-5xl rounded-xl p-6 relative shadow-lg">
+            <div className="bg-white w-full max-w-3xl rounded-xl p-6 relative shadow-lg">
               <button
                 onClick={() => setShowEditModal(false)}
                 className="absolute top-3 right-3 text-gray-600 font-bold text-xl hover:text-red-500"
               >
                 ✕
               </button>
-              {/* Product Details */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
+                <div className="bg-gray-100 rounded-2xl overflow-hidden aspect-square">
                   <img
                     src={selectedProduct.image || "/placeholder.png"}
                     alt={selectedProduct.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex flex-col">
-                  <h2 className="text-2xl font-bold mb-4">{selectedProduct.name}</h2>
-                  <p className="text-gray-600 mb-3">{selectedProduct.description}</p>
-                  <p className="text-xl font-semibold mb-2">
-                    ${selectedProduct.price}{" "}
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-2xl font-bold">{selectedProduct.name}</h2>
+                  <p className="text-gray-600 text-sm">{selectedProduct.description}</p>
+                  <p className="text-xl font-semibold">
+                    ₦{(selectedProduct.price / 100).toLocaleString()}
                     {selectedProduct.discount > 0 && (
                       <span className="text-sm text-red-500 ml-2">
                         ({selectedProduct.discount}% off)
                       </span>
                     )}
                   </p>
-                  {selectedProduct.sizes?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-1">Select Size:</h3>
-                      <div className="flex gap-2">
-                        {selectedProduct.sizes.map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`border rounded-md px-3 py-1 text-sm cursor-pointer ${
-                              selectedSize === size
-                                ? "bg-black text-white border-black"
-                                : "hover:bg-gray-100"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedProduct.colors?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-1">Select Color:</h3>
-                      <div className="flex gap-2">
-                        {selectedProduct.colors.map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => setSelectedColor(color)}
-                            className={`w-7 h-7 rounded-full border-2 cursor-pointer ${
-                              selectedColor === color
-                                ? "border-black scale-110"
-                                : "border-gray-300 hover:scale-105"
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="mb-4 flex items-center gap-3">
-                    <h3 className="font-semibold">Quantity:</h3>
-                    <div className="flex items-center border rounded-md">
-                      <button
-                        className="px-3 py-1"
-                        onClick={() => setQuantity(Math.max(quantity - 1, 1))}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) =>
-                          setQuantity(Math.max(parseInt(e.target.value) || 1, 1))
-                        }
-                        className="w-16 text-center outline-none px-2 py-1"
-                      />
-                      <button
-                        className="px-3 py-1"
-                        onClick={() => setQuantity(quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
+                  <p className="text-sm text-gray-500">Category: {selectedProduct.subcategory}</p>
+                  <p className="text-sm text-gray-500">
+                    Sizes: {selectedProduct.sizes?.join(", ") || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Colors: {selectedProduct.colors?.join(", ") || "N/A"}
+                  </p>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowEditModal(false);
+                        // navigate to a dedicated edit page if you have one
+                        // navigate(`/admin/products/${selectedProduct.id}/edit`);
+                      }}
+                      className="flex-1 py-2 rounded-md bg-black text-white hover:bg-gray-800 flex items-center justify-center gap-2"
+                    >
+                      <FaEdit /> Edit Product
+                    </button>
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="flex-1 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
+                    >
+                      Close
+                    </button>
                   </div>
-                  <button
-                    onClick={() =>
-                      HandleAddTCart(selectedProduct, quantity, selectedSize, selectedColor)
-                    }
-                    className="mt-4 w-full py-3 rounded-md text-white bg-black hover:bg-gray-800"
-                  >
-                    Add to Cart ({cartCount || 0})
-                  </button>
                 </div>
               </div>
             </div>
@@ -318,30 +247,27 @@ const Dashboard = () => {
               {filteredProducts.length === 0 ? (
                 <p className="text-center text-gray-500">No products available.</p>
               ) : (
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr>
+                    <tr className="text-slate-500">
                       <th className="border-b p-2">Name</th>
-                      <th className="border-b p-2">Price</th>
+                      <th className="border-b p-2">Price (₦)</th>
                       <th className="border-b p-2">Category</th>
                       <th className="border-b p-2">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredProducts.map((prod) => (
-                      <tr key={prod.id} className="hover:bg-gray-100">
+                      <tr key={prod.id} className="hover:bg-gray-50 border-b">
                         <td className="p-2">{prod.name}</td>
-                        <td className="p-2">${prod.price}</td>
+                        <td className="p-2">₦{(prod.price / 100).toLocaleString()}</td>
                         <td className="p-2">{prod.subcategory}</td>
-                        <td className="p-2">
+                        <td className="p-2 flex gap-2">
                           <button
-                            onClick={() => {
-                              setShowAllProductsModal(false);
-                              openEditModal(prod);
-                            }}
-                            className="bg-primary text-white px-3 py-1 rounded"
+                            onClick={() => openEditModal(prod)}
+                            className="bg-primary text-white px-3 py-1 rounded text-xs flex items-center gap-1"
                           >
-                            View / Edit
+                            <FaEdit size={10} /> Edit
                           </button>
                         </td>
                       </tr>
@@ -357,4 +283,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;

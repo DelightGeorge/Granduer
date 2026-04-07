@@ -22,6 +22,7 @@ import ThankYouPage from "./pages/ThankYouPage.jsx";
 import FavouritesPage from "./pages/FavouritesPage.jsx";
 import ProductProvider from "./Context/ProductContext.jsx";
 import VerifyPayment from "./pages/VerifyPayment.jsx";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
 
 const router = createBrowserRouter([
   {
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: "/thank-you", element: <ThankYouPage /> },
       { path: "/favourites", element: <FavouritesPage /> },
       { path: "/verifypayment/:transaction_id", element: <VerifyPayment /> },
+      { path: "/verify-email", element: <VerifyEmail /> },
     ],
   },
 ]);
